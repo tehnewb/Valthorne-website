@@ -4,8 +4,9 @@ Valthorne's public site is a single landing page at
 [tehnewb.github.io/Valthorne-website](https://tehnewb.github.io/Valthorne-website/).
 The website is authored in Java: content, responsive layout, drawing, animation,
 section navigation, accessible HTML, and the browser stylesheet all come from
-Java source. TeaVM compiles the application for the browser. The web-port adapter
-connects the compiled program to browser graphics and native platform operations.
+Java source. TeaVM compiles the application for the browser. Valthorne's portable
+target supplies browser graphics, input, lifecycle, and platform operations; this
+repository contains no website-specific browser binding layer.
 
 The page introduces the engine, points readers to its documentation and source,
 and provides a direct path to getting started. Navigation uses the sections
@@ -59,7 +60,7 @@ not remain in later deployments. `dist/`, `build/`, and `node_modules/` are igno
 | `export/WorldArtwork.java` | Original SVG landscape generation |
 | `export/HtmlExporter.java` | Semantic HTML, metadata, sitemap, and 404 output |
 | `export/BrowserStyles.java` | Native-control and text-view stylesheet generation |
-| `browser/BrowserDom.java`, `browser/BrowserPort.java` | Thin browser and web-port bindings |
+| `WebsiteController.java` | Site interaction and motion policy, using Valthorne's portable services |
 
 These paths are relative to `src/main/java/valthorne/website/`. Keep the semantic
 content and visual painter in agreement when changing the page. Java content is

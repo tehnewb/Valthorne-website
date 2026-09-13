@@ -24,6 +24,6 @@ final class BrowserBridge {
 
     /** Smooth alpha shading keeps text readable over the portrait artwork crop. */
     static void shade(long context, float x, float y, float width, float height, int color, float from, float to) {
-        valthorne.website.browser.BrowserPort.fillGradient((int) context, x, y, width, height, color, from, to);
+        valthorne.web.BrowserPort.fillGradient((int) context, x, y, width, height, color, from, to);
     }
 }

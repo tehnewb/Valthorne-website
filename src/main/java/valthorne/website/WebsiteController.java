@@ -15,8 +15,8 @@ import org.teavm.jso.dom.events.MouseEvent;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLImageElement;
-import valthorne.website.browser.BrowserDom;
-import valthorne.website.browser.BrowserPort;
+import valthorne.web.BrowserDom;
+import valthorne.web.BrowserPort;
 
 /**
  * Owns landing-page input, fragment navigation, finite motion and browser lifecycle.

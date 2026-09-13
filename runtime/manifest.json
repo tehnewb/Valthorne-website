@@ -31,11 +31,9 @@
     "yoga-backend.js": "fbec4093bfb77f276c0a73c82d513b1dd2c9b7454b324d916ccb78f6f401fa25"
   },
   "sources": {
-    "src/main/java/valthorne/website/BrowserBridge.java": "1e331b3eb7f587e5a5e015f570ea1501bb9673a3c6dc38d0f96172ba64791096",
+    "src/main/java/valthorne/website/BrowserBridge.java": "6261b4c4bd49ce88a7eb4fc020228aa9329bb6d4274266c424764255530f07ca",
     "src/main/java/valthorne/website/WebsiteApplication.java": "48d1a0a49fd3a4fb3c7f4d2b24f8a46e046dfba38f30f695b29194396321cb21",
-    "src/main/java/valthorne/website/WebsiteController.java": "123198952a4bdbb9b9645b98a9bdfb3ab6d7f1c74ca2dcbef7d68fc77b9da80d",
-    "src/main/java/valthorne/website/browser/BrowserDom.java": "fb7ee15ec353a96281561d0a7efc9ada3acdcdf826e92ff3d325b7b2a75c515e",
-    "src/main/java/valthorne/website/browser/BrowserPort.java": "5af611b9319710a1b7778be72cece4afbce39c9d6c862e65badbbfe199109e31",
+    "src/main/java/valthorne/website/WebsiteController.java": "b195563a9ce30fde7037fa4dbe59dd1f7fb49efde36bbccc0604841d97879fb9",
     "src/main/java/valthorne/website/content/LandingContent.java": "3331e3fa20e8acc7fe80476d4d69759943673df8c8622336e37b122354bfa6fd",
     "src/main/java/valthorne/website/export/BrowserStyles.java": "d48dac284ffe9773869f7d5da5dbced2dc6fc1d2fd7356f71a5bbb33bd46a69e",
     "src/main/java/valthorne/website/export/ContentValidator.java": "87ef826c0503bc7133b343ec2c4f2677dc0cf58c3af76dc09baebb2138775986",
