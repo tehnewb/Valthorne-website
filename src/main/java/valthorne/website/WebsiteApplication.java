@@ -65,6 +65,7 @@ public final class WebsiteApplication implements Application {
         float y = hero(headerHeight() - scroll);
         y = engine(y);
         y = resources(y);
+        y = builder(y);
         y = start(y);
         y = footer(y);
         header();
@@ -195,6 +196,20 @@ public final class WebsiteApplication implements Application {
         return bottom + 48 + (width < 760 ? 70 : 100);
     }
 
+    private float builder(float y) {
+        BrowserBridge.section("builder", y + scroll);
+        line(margin, y, width - margin, y, RULE);
+        y += width < 760 ? 68 : 92;
+        BrowserBridge.reveal("builder", y);
+        text("PROJECT BUILDER", margin, y, 12, ACCENT, "ui-medium");
+        float widthLimit = width < 1000 ? contentWidth : contentWidth * .64f;
+        float bottom = paragraph(LandingContent.BUILDER_TITLE, margin, y + 34, widthLimit, width < 760 ? 44 : 60, WHITE, 1.08f, "display") + 24;
+        bottom = paragraph(LandingContent.BUILDER_TEXT, margin, bottom, Math.min(widthLimit, 660), 19, MUTED, 1.5f, "default") + 30;
+        action("Open the browser builder", "?view=text#builder", margin, bottom, 226, true, false);
+        BrowserBridge.clearEffect();
+        return bottom + 48 + (width < 760 ? 68 : 96);
+    }
+
     private float footer(float y) {
         line(margin, y, width - margin, y, RULE);
         float top = y + 39;
@@ -221,12 +236,14 @@ public final class WebsiteApplication implements Application {
             action("Get started", "#start", width - margin - 111, 13, 111, true, true);
             nav("Engine", "#engine", margin, 67, 77);
             nav("Resources", "#resources", margin + 92, 67, 99);
+            nav("Builder", "#builder", margin + 202, 67, 79);
             nav("GitHub", LandingContent.REPOSITORY, width - margin - 67, 67, 67);
         } else {
             float x = width - margin - 477;
             nav("Engine", "#engine", x, 22, 72);
             nav("Resources", "#resources", x + 105, 22, 98);
-            nav("GitHub", LandingContent.REPOSITORY, x + 234, 22, 71);
+            nav("Builder", "#builder", x + 224, 22, 71);
+            nav("GitHub", LandingContent.REPOSITORY, x + 313, 22, 71);
             action("Get started", "#start", width - margin - 130, 16, 130, true, true);
         }
     }

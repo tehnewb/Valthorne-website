@@ -91,6 +91,18 @@ public final class BrowserStyles {
                 /* Resources and the final invitation use open columns and generous spacing. */
                 #resources { padding-block: 108px 110px; }
                 #resources .section-intro > p { color: var(--muted-dark); }
+                #builder { background: #17191e; padding-block: 108px 112px; }
+                .builder-wrap { max-width: 1320px; }
+                .builder-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: end; max-width: 1050px; }
+                .builder-form label { display: grid; gap: 9px; color: #bfc3cb; font-size: 13px; font-weight: 600; }
+                .builder-form input { width: 100%; min-height: 48px; padding: 10px 13px; border: 1px solid #5b6068; border-radius: 2px; color: #fff; background: #101114; font: inherit; }
+                .builder-form input:focus { outline: 3px solid var(--focus); outline-offset: 2px; }
+                .builder-form .action { min-height: 48px; cursor: pointer; }
+                .builder-form #builder-status { grid-column: 1 / -1; min-height: 24px; margin: 3px 0 0; color: #bfc3cb; font-size: 14px; }
+                #builder-downloads { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; }
+                #builder-downloads[hidden] { display: none; }
+                #builder-downloads a { display: inline-flex; min-height: 42px; align-items: center; padding: 9px 14px; border: 1px solid #5b6068; color: #c7e6ff; font-size: 13px; }
+                #builder-downloads a:hover { border-color: #c7e6ff; }
                 .resources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 44px; }
                 .resource { display: flex; flex-direction: column; border-top: 1px solid #5b6068; padding-top: 32px; }
                 .resource h3 { font-size: 29px; }
@@ -151,6 +163,9 @@ public final class BrowserStyles {
                   .action { padding-inline: 20px; font-size: 15px; gap: 14px; }
                   .hero-caption { margin-top: 30px; font-size: 11px; }
                   #engine, #resources { padding-block: 68px; }
+                  #builder { padding-block: 68px; }
+                  .builder-form { grid-template-columns: 1fr; }
+                  .builder-form #builder-status, #builder-downloads { grid-column: auto; }
                   .section-intro { grid-template-columns: 1fr; gap: 26px; margin-bottom: 42px; }
                   h2 { font-size: clamp(46px, 10vw, 66px); }
                   .section-intro > p { font-size: 19px; line-height: 1.6; }

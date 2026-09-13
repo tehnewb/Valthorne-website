@@ -13,7 +13,7 @@ public final class LandingContent {
     public static final String TITLE = "Make it yours.";
     public static final String DESCRIPTION = "Valthorne gives Java developers the rendering, physics, audio, and interface tools to build their own games.";
     public static final String EYEBROW = "OPEN-SOURCE JAVA GAME ENGINE";
-    public static final String VERSION = "2.0.0";
+    public static final String VERSION = "2.1.0";
     public static final String REPOSITORY = "https://github.com/tehnewb/Valthorne";
     public static final String DOCUMENTATION = REPOSITORY + "/blob/main/docs/README.md";
     /** The README's published installation heading is 'Start a game'. */
@@ -27,6 +27,8 @@ public final class LandingContent {
     public static final String RESOURCES_TEXT = "Find your next step in the documentation, get closer to the source, or connect with the community.";
     public static final String CTA_TITLE = "Your next game\nstarts here.";
     public static final String CTA_TEXT = "Start with a Java project. Add Valthorne. Build what comes next.";
+    public static final String BUILDER_TITLE = "Start with a project that is already yours.";
+    public static final String BUILDER_TEXT = "Choose a name and package in the browser. Download a clean Gradle project with Valthorne 2.1.0, Java 25, and a ready-to-run application entry point.";
     public static final String FOOTER_TEXT = "Created by Albert Beaupre. Open source under Apache-2.0.";
 
     /** A numbered capability, its concise benefit, and the relevant system guide. */

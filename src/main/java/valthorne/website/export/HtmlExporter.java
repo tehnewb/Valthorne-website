@@ -81,7 +81,7 @@ public final class HtmlExporter {
         StringBuilder html = new StringBuilder(11000);
         html.append("<main id=\"content\"><header class=\"masthead\"><div class=\"wrap\">");
         brand(html);
-        html.append("<nav aria-label=\"Main navigation\"><a href=\"#engine\">Engine</a><a href=\"#resources\">Resources</a><a href=\"")
+        html.append("<nav aria-label=\"Main navigation\"><a href=\"#engine\">Engine</a><a href=\"#resources\">Resources</a><a href=\"#builder\">Builder</a><a href=\"")
                 .append(escape(LandingContent.REPOSITORY)).append("\">GitHub ↗</a></nav>");
         action(html, "Get started", "#start", true, false);
         html.append("</div></header>\n<header class=\"hero\">");
@@ -110,7 +110,13 @@ public final class HtmlExporter {
             textLink(html, resource.label(), resource.href());
             html.append("</article>");
         }
-        html.append("</div></div></section>\n<section id=\"start\"><div class=\"wrap\"><h2>")
+        html.append("</div></div></section>\n<section id=\"builder\"><div class=\"wrap builder-wrap\"><header class=\"section-intro\"><h2>")
+                .append(escape(LandingContent.BUILDER_TITLE)).append("</h2><p>").append(escape(LandingContent.BUILDER_TEXT)).append("</p></header>");
+        html.append("<form id=\"project-builder\" class=\"builder-form\"><label>Project name<input name=\"project\" value=\"MyValthorneGame\" required pattern=\"[A-Za-z][A-Za-z0-9_-]*\"></label>");
+        html.append("<label>Package name<input name=\"package\" value=\"com.example.game\" required pattern=\"[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)*\"></label>");
+        html.append("<label>Application class<input name=\"class\" value=\"MyGame\" required pattern=\"[A-Z][A-Za-z0-9_]*\"></label>");
+        html.append("<button class=\"action primary\" type=\"submit\">Generate project files</button><p id=\"builder-status\" role=\"status\"></p><div id=\"builder-downloads\" hidden></div></form>");
+        html.append("</div></section>\n<section id=\"start\"><div class=\"wrap\"><h2>")
                 .append(escape(LandingContent.CTA_TITLE)).append("</h2><p>").append(escape(LandingContent.CTA_TEXT))
                 .append("</p><div class=\"hero-actions\">");
         action(html, "Read the quick start", LandingContent.GET_STARTED, true, true);
