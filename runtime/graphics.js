@@ -136,3 +136,4 @@ export class BrowserGraphics {
     }
     close(){if(this.closed)return;if(this.vector){this.gl.deleteProgram(this.vector.program);this.gl.deleteVertexArray(this.vector.vao);this.gl.deleteTexture(this.vector.texture);this.vector=null;}for(const [id,item] of this.objects)if(item.kind!=='Uniform')this.remove(id,item.kind);this.objects.clear();this.images.clear();this.uniforms.clear();this.canvas?.remove();this.gl?.getExtension('WEBGL_lose_context')?.loseContext();this.closed=true;}
 }
+
