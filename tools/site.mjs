@@ -8,6 +8,14 @@ import { createHash } from 'node:crypto';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repo = path.resolve(process.env.VALTHORNE_DIR || path.join(root, '../Valthorne')), output = path.join(root, 'dist');
+// The engine owns the adapter. A checked-in snapshot keeps this public repo
+// self-contained for Pages builds; local development prefers the engine source.
+const browserHostSource = path.join(repo, 'portable/web/public/website-host.js');
+const browserHostSnapshot = path.join(root, 'runtime/website-host.js');
+async function browserHost() {
+  try { await fs.access(browserHostSource); return browserHostSource; }
+  catch { return browserHostSnapshot; }
+}
 const sourceRoot = path.join(root, 'src/main/java/valthorne/website');
 const exportClasses = path.join(root, 'build/export-classes');
 const command = process.argv[2] || 'build';
@@ -80,14 +88,15 @@ async function captureRuntime() {
 async function build() {
   // Normalize source line endings so the same checkout receives the same build ID on every OS.
   const sources = (await files(path.join(root, 'src'))).filter(file => file.endsWith('.java'));
-  const revisionFiles = [...sources, ...['runtime/manifest.json', 'browser-host.js', 'tools/site.mjs'].map(file => path.join(root, file))];
+  const host = await browserHost();
+  const revisionFiles = [...sources, path.join(root, 'runtime/manifest.json'), host, path.join(root, 'tools/site.mjs')];
   const revision = hash((await Promise.all(revisionFiles.map(async file => path.relative(root, file).replaceAll('\\', '/') + '\n' + normalize(await fs.readFile(file, 'utf8'))))).join('\n')).slice(0, 16);
   // Clear only the verified output directory so deleted assets cannot leak into a later deployment.
   if (path.dirname(output) !== root || path.basename(output) !== 'dist') throw new Error('Unsafe output directory');
   await fs.rm(output, { recursive: true, force: true });
   await fs.mkdir(output, { recursive: true });
   await runExporterClass('HtmlExporter', [output, revision]);
-  await fs.copyFile(path.join(root, 'browser-host.js'), path.join(output, 'browser-host.js'));
+  await fs.copyFile(await browserHost(), path.join(output, 'browser-host.js'));
   await fs.cp(path.join(root, 'assets'), path.join(output, 'assets'), { recursive: true });
   await fs.cp(path.join(root, 'runtime'), path.join(output, 'runtime'), { recursive: true });
   await fs.cp(path.join(root, 'licenses'), path.join(output, 'licenses'), { recursive: true });
@@ -103,7 +112,9 @@ async function check() {
   for (const [file, digest] of Object.entries(manifest.sources)) if (fingerprint(file, await fs.readFile(path.join(root, file))) !== digest) throw new Error('Java changed; compile and capture the runtime again: ' + file);
   const javaFiles = (await files(path.join(root, 'src'))).map(file => path.relative(root, file).replaceAll('\\', '/'));
   if (JSON.stringify(javaFiles.sort()) !== JSON.stringify(Object.keys(manifest.sources).sort())) throw new Error('Java sources added or removed; compile and recapture the runtime.');
-  for (const file of ['browser-host.js', 'runtime/valthorne.js']) execFileSync(process.execPath, ['--check', path.join(root, file)], processOptions);
+  const host = await browserHost();
+  execFileSync(process.execPath, ['--check', host], processOptions);
+  execFileSync(process.execPath, ['--check', path.join(root, 'runtime/valthorne.js')], processOptions);
   await runExporterClass('ContentValidator', [path.join(root, 'assets')]);
   console.log('Verified Java/runtime fingerprints and browser bootstrap syntax.');
 }
