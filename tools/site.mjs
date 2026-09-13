@@ -12,9 +12,15 @@ const repo = path.resolve(process.env.VALTHORNE_DIR || path.join(root, '../Valth
 // self-contained for Pages builds; local development prefers the engine source.
 const browserHostSource = path.join(repo, 'portable/web/public/website-host.js');
 const browserHostSnapshot = path.join(root, 'runtime/website-host.js');
+const applicationShellSource = path.join(repo, 'portable/web/public/application.html');
+const applicationShellSnapshot = path.join(root, 'runtime/application.html');
 async function browserHost() {
   try { await fs.access(browserHostSource); return browserHostSource; }
   catch { return browserHostSnapshot; }
+}
+async function applicationShell() {
+  try { await fs.access(applicationShellSource); return applicationShellSource; }
+  catch { return applicationShellSnapshot; }
 }
 const sourceRoot = path.join(root, 'src/main/java/valthorne/website');
 const exportClasses = path.join(root, 'build/export-classes');
@@ -96,6 +102,9 @@ async function build() {
   await fs.rm(output, { recursive: true, force: true });
   await fs.mkdir(output, { recursive: true });
   await runExporterClass('HtmlExporter', [output, revision]);
+  // The portable engine owns the runnable document shell. The Java exporter
+  // remains only for the optional semantic fallback artifacts.
+  await fs.copyFile(await applicationShell(), path.join(output, 'index.html'));
   await fs.copyFile(await browserHost(), path.join(output, 'browser-host.js'));
   await fs.cp(path.join(root, 'assets'), path.join(output, 'assets'), { recursive: true });
   await fs.cp(path.join(root, 'runtime'), path.join(output, 'runtime'), { recursive: true });
