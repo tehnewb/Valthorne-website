@@ -1,29 +1,48 @@
 # Valthorne landing page
 
-The UI, layout, animations and interactive Jacaranda scene are implemented in Java 25 using Valthorne. The engine supplies its browser runtime and application shell.
+A Java 25 application using Valthorne UI nodes, vector drawing and an embedded
+Filament 3D scene. The application layout and interactions are implemented in Java.
 
-## Develop
-
-Import this Gradle project into IntelliJ with Java 25. Keep the compatible Valthorne engine checkout at `../Valthorne`.
+## Run
 
 ```text
 gradlew.bat run
+```
+
+Open this folder in IntelliJ as a Gradle project. The included build uses the sibling
+`../Valthorne` checkout so engine UI and web-port changes can be tested together.
+
+## Export to web
+
+```text
 gradlew.bat webExport
+```
+
+The completed export is in this project's `build/web` directory. Serve that
+directory over HTTP; do not open its index file directly. Exporting does not
+publish or modify the live GitHub Pages website.
+
+## Interactions
+
+- Navigation buttons smoothly scroll to the engine overview and quick start.
+- One full-window scene lights the tree, page backdrop and card surfaces. Move the pointer anywhere on the page to move its light. Text remains a selectable, readable UI overlay.
+- Pause motion stops decorative animation; navigation then jumps immediately.
+- Text is selectable, including multiline text, word/line selection by repeated
+  clicks, Shift extension and Ctrl/Cmd+A/C shortcuts.
+- Narrow layouts stack content and the live 3D exhibit vertically.
+- Card previews and their feature links open eight distinct in-application documentation pages covering 3D rendering, lighting, the application lifecycle, UI, audio, physics, animation and viewports. Each includes practical explanations and a code snippet. Home/All features returns to the landing page. These Java views do not change the browser URL.
+- Cards lift and tilt on hover. Their materials no longer cast the large shadow bands across the page.
+- Code blocks use JetBrains Mono with syntax highlighting and horizontal scrolling. Copy code exports the original snippet, including whitespace; selection is also supported.
+
+See `ASSETS.md` for the model, texture, font and design-reference credits.
+
+## Loading checks
+
+The tree is shipped as preconverted gzip-compressed binary geometry, not runtime-parsed OBJ. All 98,375 triangles and three materials are retained. The Java UI is initialized before geometry construction. Startup timings are reported in the browser console.
+
+```text
+node tools/check-packed-tree.mjs
 node tools/check-web-export.mjs
 ```
 
-The export is written to this project's `build/web`. The current page uses unpublished engine changes, so Pages deploys the verified, prepared export in `site/` rather than rebuilding against an incompatible public engine version. To publish an update, replace `site/` with the complete tested export and commit both Java source changes and the export.
-
-## Deployment
-
-The Pages workflow validates startup files and tree resources, packages `site/`, and deploys it to https://tehnewb.github.io/Valthorne-website/ on pushes to `main`.
-
-The floating navigation scrolls between sections. Move the pointer across the tree to move its light; use the pause control to stop decorative motion. Text remains selectable. See `ASSETS.md` for asset provenance.
-
-## Full-page scene and startup
-
-The pointer light now spans the entire viewport, illuminating the tree, page backdrop and card surfaces in one scene. Text is a readable, selectable UI overlay. Navigation and scrolling move the scene surfaces with their corresponding UI nodes.
-
-The runtime uses a 4.9 MB compressed, preconverted binary tree rather than a 22 MB text OBJ, retaining all 98,375 triangles. Unused concept artwork is no longer embedded. Generated JavaScript fell from 43.3 MB to approximately 16.7 MB before HTTP compression. The UI is initialized before tree construction, and independent browser backends initialize concurrently.
-
-Local browser sample: Java UI initialization 135 ms; packed tree construction 1,067 ms. These timings exclude network transfer and are not cold-load guarantees. Run `node tools/check-packed-tree.mjs` and `node tools/check-web-export.mjs site` to validate geometry and deployment assets.
+Measured generated JavaScript size: 43,274,044 bytes before this change, approximately 16.7 MB after (about 61% smaller before HTTP compression). This is a payload comparison, not a claim about cold-network load time.

@@ -25,16 +25,16 @@ final class SceneExhibit implements AutoCloseable {
 
     SceneExhibit() {
         background=surface(new Color(0xFF08070B)); background.setPosition(0,1,0); scene.add(background);
-        pointer = new PointLight3D().setColor(new Color(0xFFE9DEFF)).setIntensity(1100).setRange(9).setCastsShadows(true);
+        pointer = new PointLight3D().setColor(new Color(0xFFE9DEFF)).setIntensity(350).setRange(9).setCastsShadows(true);
         scene.addLight(pointer);
-        scene.addLight(new PointLight3D().setPosition(4,0,3).setColor(new Color(0xFF8761DC)).setIntensity(500).setRange(9));
+        scene.addLight(new PointLight3D().setPosition(4,0,3).setColor(new Color(0xFF8761DC)).setIntensity(200).setRange(9));
         renderer.setQuality(FilamentRenderer3D.Quality.HIGH); renderer.setEnvironmentIntensity(40); renderer.setExposure(1.1f);
         camera.setClipPlanes(.05f,40); camera.setFieldOfViewDegrees(FOV);
         camera.setPosition(0,-DISTANCE,0); camera.lookAt(0,0,0,0,0,1);
     }
     private ModelInstance3D surface(Color color) {
         return new ModelInstance3D().setModel(plane).setRotation((float)Math.PI/2,0,0)
-            .setMaterial(new Material3D().setTint(color).setRoughness(.7f).setCullBackFaces(false));
+            .setMaterial(new Material3D().setTint(color).setRoughness(1).setMetallic(.35f).setCastsShadow(false).setReceivesShadow(false).setCullBackFaces(false));
     }
     void clearSurfaces() {
         for(var surface:surfaces)scene.remove(surface);
@@ -55,17 +55,23 @@ final class SceneExhibit implements AutoCloseable {
         for(int i=0;i<nodes.size();i++) {
             var node=nodes.get(i); var surface=surfaces.get(i);
             float top=node.getAbsoluteY()-scrollY;
-            surface.setPosition((node.getAbsoluteX()+node.getWidth()/2-w*.5f)*scale,.1f,(h*.5f-top-node.getHeight()/2)*scale);
-            surface.setScale(node.getWidth()*scale,node.getHeight()*scale,1);
+            float hover=moving&&node instanceof ShowcaseArt art?art.depthHover():0;
+            float depth=-hover*.15f, projected=scale*(DISTANCE+depth)/DISTANCE;
+            float dx=Math.max(-1,Math.min(1,(Mouse.getX()-node.getAbsoluteX())/node.getWidth()*2-1));
+            float dy=Math.max(-1,Math.min(1,(h-Mouse.getY()-top)/node.getHeight()*2-1));
+            surface.setPosition((node.getAbsoluteX()+node.getWidth()/2-w*.5f)*projected,depth,(h*.5f-top-node.getHeight()/2+hover*5)*projected);
+            surface.setRotation((float)Math.PI/2+dy*hover*.065f,0,-dx*hover*.045f);
+            surface.setScale(node.getWidth()*projected,node.getHeight()*projected,1);
         }
         // Present the UI before decoding geometry, rather than blocking Application.init.
-        if(tree==null && frames++>=2) {
+        if(slot!=null && tree==null && frames++>=2) {
             long started=System.nanoTime(); tree=new PackedTree(scene);
             System.out.println("Packed tree constructed in " + (System.nanoTime()-started)/1000000 + " ms");
         }
-        if(tree!=null) {
+        if(tree!=null)for(var part:tree.parts)part.setVisible(slot!=null);
+        if(tree!=null && slot!=null) {
             float top=slot.getAbsoluteY()-scrollY;
-            float size=slot.getWidth()*scale*.94f/tree.width;
+            float size=Math.min(slot.getWidth()*.94f/tree.width,slot.getHeight()*.82f/tree.height)*scale;
             for(var part:tree.parts) {
                 part.setScale(size).setPosition((slot.getAbsoluteX()+slot.getWidth()*.5f-w*.5f)*scale,-.2f,(h*.5f-top-slot.getHeight()*.88f)*scale);
                 part.setRotation(0,0,moving?mx*.025f+scrollY*.0002f:0);

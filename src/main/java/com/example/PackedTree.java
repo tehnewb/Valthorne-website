@@ -13,7 +13,7 @@ import valthorne.graphics.texture.Texture;
 final class PackedTree implements AutoCloseable {
     final ModelInstance3D[] parts = new ModelInstance3D[3];
     private final Texture[] textures = new Texture[3];
-    float width;
+    float width, height;
     PackedTree(Scene3D scene) {
         try (var resource = PackedTree.class.getResourceAsStream("/models/jacaranda/tree.vtr.gz")) {
             if (resource == null) throw new IOException("Missing packed tree");
@@ -28,6 +28,7 @@ final class PackedTree implements AutoCloseable {
                         p[i]=new Vector3f(in.readFloat(),in.readFloat(),in.readFloat());
                         n[i]=new Vector3f(in.readFloat(),in.readFloat(),in.readFloat()); uv[i]=new Vector2f(in.readFloat(),in.readFloat());
                         width=Math.max(width,Math.abs(p[i].x)*2);
+                        height=Math.max(height,p[i].z);
                     }
                     Model3D.Triangle[] triangles=new Model3D.Triangle[faces];
                     for(int i=0;i<faces;i++) {
