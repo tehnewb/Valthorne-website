@@ -85,11 +85,11 @@ export class BrowserSceneRenderer {
     lightCount(){return this.lights.length+this.entries.reduce((count,item)=>count+(item.light?1:0),0);}
     render(projection,model,near,far){
         this.check();const h=this.host,canvas=h.platform.canvas||document.querySelector('#scene');
-        const gl=h.graphics.context(),viewport=gl.getParameter(gl.VIEWPORT);
+        h.graphics.context();
         h.graphics.resize();h.graphics.clearOverlay();
-        const ratio=Math.min(devicePixelRatio||1,1.5),w=Math.max(1,Math.round(canvas.clientWidth*ratio)),height=Math.max(1,Math.round(canvas.clientHeight*ratio));
+        const ratio=Math.max(1,Math.min(window.devicePixelRatio||1,2)),w=Math.max(1,Math.round(canvas.clientWidth*ratio)),height=Math.max(1,Math.round(canvas.clientHeight*ratio));
         if(canvas.width!==w||canvas.height!==height){canvas.width=w;canvas.height=height;}
-        this.view.setViewport(Array.from(viewport, value=>Math.round(value*ratio)));this.camera.setCustomProjection(projection,near,far);this.camera.setModelMatrix(model);
+        this.view.setViewport([0,0,w,height]);this.camera.setCustomProjection(projection,near,far);this.camera.setModelMatrix(model);
         h.renderer.render(h.swap,this.view);h.frames++;globalThis.valthorneReady=true;
     }
     exposure(value){this.camera.setExposure(4,1/60,100*value);}

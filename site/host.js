@@ -14,8 +14,9 @@ import { BrowserFiles } from './files.js';
 import { BrowserCompute } from './compute.js';
 
 const canvas = document.querySelector('#scene');
-const status = document.querySelector('#stats');
+const status = document.querySelector('#stats') || document.querySelector('#status');
 const errorBox = document.querySelector('#error');
+const getDevicePixelRatio = () => Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
 function fail(error) {
     errorBox.textContent = `Unable to run the scene: ${error.message || error}`;
     errorBox.style.display = 'block';
@@ -191,7 +192,7 @@ class BrowserHost {
         manager.setTransform(instance,m); instance.delete();
     }
     render() {
-        const ratio=Math.min(devicePixelRatio||1,1.5),w=Math.max(1,Math.round(canvas.clientWidth*ratio)),h=Math.max(1,Math.round(canvas.clientHeight*ratio));
+        const ratio=getDevicePixelRatio(),w=Math.max(1,Math.round(canvas.clientWidth*ratio)),h=Math.max(1,Math.round(canvas.clientHeight*ratio));
         if (canvas.width!==w||canvas.height!==h) {canvas.width=w;canvas.height=h;this.view.setViewport([0,0,w,h]);}
         this.camera.setProjectionFov(this.firstPerson?.fov||45,w/h,.1,100,this.F.Camera$Fov.VERTICAL);
         const d=this.distance*Math.max(1,Math.sqrt(h/w)),c=Math.cos(this.pitch);
@@ -220,10 +221,31 @@ class BrowserHost {
         document.querySelector('#drop').onclick=()=>this.commands|=1;
         document.querySelector('#reset').onclick=()=>this.commands|=2;
         document.querySelector('#pause').onclick=()=>{this.paused=!this.paused;document.querySelector('#pause').textContent=this.paused?'Resume simulation':'Pause simulation';};
-        let dragging=false,lastX=0,lastY=0;
-        canvas.onpointerdown=e=>{if(arena||this.applicationMode)return;dragging=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId);};
-        canvas.onpointermove=e=>{if(dragging){this.yaw-=(e.clientX-lastX)*.006;this.pitch=Math.max(.05,Math.min(1.3,this.pitch+(e.clientY-lastY)*.006));lastX=e.clientX;lastY=e.clientY;}};
-        canvas.onpointerup=canvas.onpointercancel=()=>dragging=false;
+        let draggingId=null,lastX=0,lastY=0;
+        const updateDrag=e=>{
+            if (draggingId!==e.pointerId) return;
+            e.preventDefault();
+            this.yaw-=(e.clientX-lastX)*.006;
+            this.pitch=Math.max(.05,Math.min(1.3,this.pitch+(e.clientY-lastY)*.006));
+            lastX=e.clientX;lastY=e.clientY;
+        };
+        const startDrag=e=>{
+            if(arena||this.applicationMode||draggingId!==null) return;
+            draggingId=e.pointerId;lastX=e.clientX;lastY=e.clientY;
+            if (canvas.setPointerCapture) {try {canvas.setPointerCapture(e.pointerId);} catch (error) { }}
+        };
+        const stopDrag=e=>{
+            if (draggingId===null||draggingId!==e.pointerId) return;
+            if (canvas.releasePointerCapture && canvas.hasPointerCapture?.(e.pointerId)) {
+                try {canvas.releasePointerCapture(e.pointerId);} catch (error) {}
+            }
+            draggingId=null;
+        };
+        canvas.addEventListener('pointerdown', startDrag, {passive:false, signal:this.platform.events.signal});
+        window.addEventListener('pointermove', updateDrag, {passive:false, signal:this.platform.events.signal});
+        window.addEventListener('pointerup', stopDrag, {passive:false, signal:this.platform.events.signal});
+        window.addEventListener('pointercancel', stopDrag, {passive:false, signal:this.platform.events.signal});
+        canvas.addEventListener('lostpointercapture', () => {draggingId=null;}, {signal:this.platform.events.signal});
         canvas.addEventListener('wheel',e=>{if(this.applicationMode)return;e.preventDefault();this.distance=Math.max(7,Math.min(40,this.distance*Math.exp(e.deltaY*.001)));},{passive:false,signal:this.platform.events.signal});
     }
     connect(frame,shutdown) {
@@ -270,7 +292,7 @@ class BrowserHost {
         if(this.time-this.reportTime<.5)return;
         const fps=Math.round((this.frames-(this.reportFrames||0))/(this.time-this.reportTime));
         let dynamic=0;for(const object of this.objects)if(object.dynamic)dynamic++;
-        status.textContent=`${fps} FPS · ${dynamic} dynamic bodies · ${this.assets.models.size} models · ${this.particles.items.length} particles · ${this.particles.lightCount} particle lights · ${seconds}s simulation`;
+        if (status) status.textContent=`${fps} FPS · ${dynamic} dynamic bodies · ${this.assets.models.size} models · ${this.particles.items.length} particles · ${this.particles.lightCount} particle lights · ${seconds}s simulation`;
         this.reportTime=this.time;this.reportFrames=this.frames;
     }
     close() {
