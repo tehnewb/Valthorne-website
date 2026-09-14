@@ -19,9 +19,11 @@ final class SceneExhibit implements AutoCloseable {
     private final ArrayList<UINode> nodes = new ArrayList<>();
     private final ArrayList<ModelInstance3D> surfaces = new ArrayList<>();
     private PackedTree tree;
-    private float lightX, lightZ, previousTime;
+    private float lightX, lightZ, lightTargetX, lightTargetZ, previousTime;
     private int frames;
-    private static final float DISTANCE=9, FOV=37;
+    private static final float DISTANCE=9, FOV=37,
+        LIGHT_INPUT_SMOOTHING=14,
+        LIGHT_FOLLOW_SMOOTHING=6;
 
     SceneExhibit() {
         background=surface(new Color(0xFF08070B)); background.setPosition(0,1,0); scene.add(background);
@@ -48,9 +50,19 @@ final class SceneExhibit implements AutoCloseable {
         int w=Window.getWidth(), h=Window.getHeight(); if(w<1||h<1)return;
         float scale=2*DISTANCE*(float)Math.tan(Math.toRadians(FOV/2))/h;
         float dt=Math.max(0,Math.min(.05f,time-previousTime)); previousTime=time;
-        float response=moving?1-(float)Math.exp(-dt*12):1;
         float mx=(Mouse.getX()-w*.5f)*scale, mz=(Mouse.getY()-h*.5f)*scale;
-        lightX+=(mx-lightX)*response; lightZ+=(mz-lightZ)*response;
+        if (moving) {
+            float inputResponse=1-(float)Math.exp(-dt*LIGHT_INPUT_SMOOTHING);
+            lightTargetX+=(mx-lightTargetX)*inputResponse;
+            lightTargetZ+=(mz-lightTargetZ)*inputResponse;
+
+            float followResponse=1-(float)Math.exp(-dt*LIGHT_FOLLOW_SMOOTHING);
+            lightX+=(lightTargetX-lightX)*followResponse;
+            lightZ+=(lightTargetZ-lightZ)*followResponse;
+        } else {
+            lightTargetX=mx; lightTargetZ=mz;
+            lightX=mx; lightZ=mz;
+        }
         pointer.setPosition(lightX,-1.7f,lightZ);
         background.setScale(w*scale*2,h*scale*2,1);
         for(int i=0;i<nodes.size();i++) {
