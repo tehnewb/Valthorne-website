@@ -1,0 +1,70 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.gradleup.shadow' version '9.3.1'
+}
+
+group = 'com.example'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    implementation 'io.github.tehnewb:Valthorne:2.1.0'
+}
+
+application { mainClass = 'com.example.Main' }
+
+java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+
+def lwjglJvmArgs = [
+        '--enable-native-access=ALL-UNNAMED',
+        '--add-opens=java.base/java.lang=ALL-UNNAMED',
+        '--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED',
+        '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED',
+        '-Djdk.module.illegalAccess.silent=true'
+]
+
+tasks.withType(JavaExec).configureEach { jvmArgs += lwjglJvmArgs }
+tasks.withType(Test).configureEach { jvmArgs += lwjglJvmArgs }
+
+tasks.named('shadowJar') {
+    archiveClassifier.set('')
+    mergeServiceFiles()
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+}
+
+tasks.named('build') { dependsOn tasks.named('shadowJar') }
+tasks.named('startScripts') { dependsOn tasks.named('shadowJar') }
+tasks.named('distTar') { dependsOn tasks.named('shadowJar') }
+tasks.named('distZip') { dependsOn tasks.named('shadowJar') }
+tasks.matching { it.name == 'startShadowScripts' }.configureEach { dependsOn tasks.named('jar') }
+
+def engineProjectDir = file('../Valthorne')
+def portableProjectDir = file('../Valthorne/portable')
+def engineGradle = file('../Valthorne/gradlew.bat')
+
+tasks.register('webExportEngine', Exec) {
+    group = 'build'
+    description = 'Generates the browser build using the Valthorne portable exporter.'
+    workingDir engineProjectDir
+    commandLine engineGradle,
+            '-p', portableProjectDir.absolutePath,
+            ':web:webExport',
+            '-PapplicationMain=com.example.Main',
+            '-PapplicationSources=../Valthorne-website/src/main/java',
+            '-PapplicationResources=../Valthorne-website/src/main/resources',
+            '--rerun-tasks',
+            '--no-daemon'
+}
+
+tasks.register('webExport', Sync) {
+    group = 'build'
+    description = 'Exports this Valthorne application into the website project.'
+    dependsOn tasks.named('webExportEngine')
+    from(new File(portableProjectDir, 'web/build/export'))
+    into(layout.buildDirectory.dir('web'))
+}

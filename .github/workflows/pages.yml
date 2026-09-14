@@ -16,56 +16,25 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - name: Build the Valthorne website
-        run: node tools/site.mjs build
-      - name: Install browser verification tools
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
-      - name: Verify the deployed URL layout and engine behavior
-        run: |
-          node tools/site.mjs serve > website-preview.log 2>&1 &
-          SERVER_PID=$!
-          trap 'kill "$SERVER_PID"' EXIT
-          for i in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:8097/Valthorne-website/ > /dev/null; then break; fi
-            sleep 1
-          done
-          node tools/verify.mjs
-          node tools/verify-navigation.mjs
-      - name: Upload browser report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: website-verification
-          path: build/
-          if-no-files-found: ignore
+      - name: Verify the prepared Java application export
+        run: node tools/check-web-export.mjs site
       - name: Configure Pages
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5
-      - name: Package Pages artifact
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      - name: Package tested export
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
-
+          path: site
   deploy:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     permissions:
       pages: write
       id-token: write
