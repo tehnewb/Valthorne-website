@@ -31,6 +31,15 @@ def lwjglJvmArgs = [
 tasks.withType(JavaExec).configureEach { jvmArgs += lwjglJvmArgs }
 tasks.withType(Test).configureEach { jvmArgs += lwjglJvmArgs }
 
+tasks.register('checkSnippets', JavaExec) {
+    group = 'verification'
+    description = 'Compiles every displayed feature snippet against the engine API.'
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.example.SnippetCompilationCheck'
+}
+tasks.named('check') { dependsOn tasks.named('checkSnippets') }
+
 tasks.named('shadowJar') {
     archiveClassifier.set('')
     mergeServiceFiles()
@@ -55,6 +64,7 @@ tasks.register('webExportEngine', Exec) {
             '-p', portableProjectDir.absolutePath,
             ':web:webExport',
             '-PapplicationMain=com.example.Main',
+            '-PwebPhysics=false',
             '-PapplicationSources=../Valthorne-website/src/main/java',
             '-PapplicationResources=../Valthorne-website/src/main/resources',
             '--rerun-tasks',

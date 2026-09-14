@@ -18,6 +18,7 @@ public final class Main implements Application {
     private UIRoot ui;
     private NanoScrollPanel scroll;
     private NanoContainer exhibitSlot;
+    private NanoContainer documentationNavigation;
     private UINode projects, about;
     private SceneExhibit exhibit;
     private int page = -1, pendingPage = -2;
@@ -62,7 +63,22 @@ public final class Main implements Application {
         if (width >= 800) right.add(label("BUILT WITH VALTHORNE", 10, MUTED)); ribbon.add(right); root.add(ribbon);
         scroll = new NanoScrollPanel().horizontal(false).horizontalBar(false).scrollSpeed(60);
         scroll.setStyle(NanoScrollPanel.BACKGROUND_COLOR_KEY, CLEAR); scroll.setStyle(NanoScrollPanel.BORDER_WIDTH_KEY, 0f);
-        scroll.getLayout().widthPercent(100).height(0).grow().minHeight(0); root.add(scroll);
+        documentationNavigation=null;
+        if(page>=0 && width>=900) {
+            var workspace=new NanoContainer();
+            workspace.getLayout().widthPercent(100).height(0).grow().minHeight(0).row();
+            var sidebar=new NanoScrollPanel().horizontal(false).horizontalBar(false);
+            sidebar.getLayout().width(260).heightPercent(100).noShrink();
+            sidebar.setStyle(NanoScrollPanel.BACKGROUND_COLOR_KEY,PANEL);
+            sidebar.setStyle(NanoScrollPanel.BORDER_WIDTH_KEY,0f);
+            documentationNavigation=new NanoContainer();
+            documentationNavigation.getLayout().widthPercent(100).column().padding(18).gap(8).noShrink();
+            sidebar.setContent(documentationNavigation);workspace.add(sidebar);
+            scroll.getLayout().width(0).grow().heightPercent(100).minWidth(0);
+            workspace.add(scroll);root.add(workspace);
+        } else {
+            scroll.getLayout().widthPercent(100).height(0).grow().minHeight(0);root.add(scroll);
+        }
         var content = new NanoContainer(); content.getLayout().widthPercent(100).column().noShrink(); scroll.setContent(content);
         if(page>=0) {
             buildFeature(content,gutter);
@@ -118,14 +134,39 @@ public final class Main implements Application {
         section.add(label("FEATURES  /  0"+(page+1),11,VIOLET));
         section.add(label(feature.title(),width<700?42:64,WHITE));
         section.add(label(feature.summary(),width<700?16:21,MUTED));
+        var exampleLinks=new NanoContainer();
+        exampleLinks.getLayout().column().gap(6).noShrink();
+        if(documentationNavigation!=null) {
+            documentationNavigation.add(label("DOCUMENTATION",12,VIOLET));
+            for(int i=0;i<FeaturePage.PAGES.length;i++) {
+                final int target=i;
+                var link=button(FeaturePage.PAGES[i].title(),()->pendingPage=target);
+                if(i==page)link.textColor(VIOLET);
+                documentationNavigation.add(link);
+                if(i==page)documentationNavigation.add(exampleLinks);
+            }
+        } else {
+            section.add(label("5 code examples  /  On this page",13,VIOLET));
+            section.add(exampleLinks);
+        }
         section.add(label(feature.details(),width<700?13:17,MUTED));
         var topics=feature.topics();
         for(int i=0;i<topics.length;i+=2) {
             section.add(label(topics[i],width<700?26:32,WHITE));
             section.add(label(topics[i+1],width<700?13:17,MUTED));
         }
-        section.add(label("Start building",width<700?26:32,WHITE));
+        var start=label("Start building",width<700?26:32,WHITE);
+        section.add(start);
+        exampleLinks.add(button("01  Start building",()->navigate(start)));
         section.add(new CodeBlock(feature.code()));
+        int exampleNumber=2;
+        for(var example:FeatureExamples.forPage(page)) {
+            var heading=label(example.title(),width<700?26:32,WHITE);
+            section.add(heading);
+            exampleLinks.add(button("0"+exampleNumber++ + "  " + example.title(),()->navigate(heading)));
+            section.add(label(example.note(),width<700?13:17,MUTED));
+            section.add(new CodeBlock(example.code()));
+        }
         section.add(label("Use these fragments in your Application lifecycle.\nImport the relevant Valthorne classes in your project.",width<700?12:14,MUTED));
         section.add(button("Next feature  →",()->pendingPage=(page+1)%FeaturePage.PAGES.length));
         content.add(section);

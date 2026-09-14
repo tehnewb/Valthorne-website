@@ -1,5 +1,5 @@
-import initJolt from './vendor/jolt-physics.wasm-compat.js';
 import { BrowserAssets } from './assets.js';
+import { loadPhysicsRuntime } from './physics-runtime.js';
 import { BrowserPlatform } from './platform.js';
 import { BrowserParticles } from './particles.js';
 import { BrowserMedia } from './media.js';
@@ -65,6 +65,7 @@ class BrowserHost {
         this.nextBodyId=1;this.bodyHandles=new Map();this.materialRefs=new Map();this.platform=new BrowserPlatform(canvas);
         this.commands=0; this.paused=false; this.frames=0; this.last=0; this.time=0; this.reportTime=0;
         this.yaw=.65; this.pitch=.42; this.distance=19; this.matrix=new Float32Array(16);
+        if(J){
         const settings = new J.JoltSettings();
         settings.mMaxBodies=128; settings.mMaxBodyPairs=2048; settings.mMaxContactConstraints=2048;
         const filter = new J.ObjectLayerPairFilterTable(2);
@@ -77,6 +78,7 @@ class BrowserHost {
         settings.mObjectVsBroadPhaseLayerFilter=new J.ObjectVsBroadPhaseLayerFilterTable(bp,2,filter,2);
         this.physics=new J.JoltInterface(settings); J.destroy(settings);
         this.bodies=this.physics.GetPhysicsSystem().GetBodyInterface();
+        }
         const e=this.engine=F.Engine.create(canvas, {antialias:false});
         this.scene=e.createScene(); this.view=e.createView(); this.renderer=e.createRenderer(); this.swap=e.createSwapChain();
         this.cameraEntity=F.EntityManager.get().create(); this.camera=e.createCamera(this.cameraEntity);
@@ -104,6 +106,7 @@ class BrowserHost {
     color(rgb) {return [(rgb>>16&255)/255,(rgb>>8&255)/255,(rgb&255)/255];}
     createPhysicsWorld(capacities,layers,contact){
         if(this.closed)throw new Error('Backend is closed');
+        if(!this.J)throw new Error('Physics is disabled for this export; enable webPhysics and export again.');
         const world=new BrowserPhysicsWorld(this.J,capacities,layers,contact);
         this.physicsWorlds.add(world);world.onClose=()=>this.physicsWorlds.delete(world);return world;
     }
@@ -115,6 +118,7 @@ class BrowserHost {
     box(x,y,z,hx,hy,hz,rgb,dynamic) {this.createBox(x,y,z,[hx,hy,hz],rgb,dynamic);}
     createBox(x,y,z,scale,rgb,dynamic,locked=false,overrideMaterial=null) {
         if(this.closed)throw new Error('Backend is closed');
+        if(!this.J)throw new Error('Physics is disabled for this export; enable webPhysics and export again.');
         if(![x,y,z,...scale].every(Number.isFinite)||scale.some(value=>value<=0))throw new Error('Invalid box');
         if(this.objects.length>=128)throw new Error('Browser body budget of 128 reached');
         const {J,F,engine:e}=this;
@@ -170,7 +174,7 @@ class BrowserHost {
         }finally{for(let i=owned.length-1;i>=0;i--)J.destroy(owned[i]);}
     }
     castRay(x,y,z,dx,dy,dz,range,ignore){const distance=this.rayDistance(x,y,z,dx,dy,dz,range,ignore);return distance<0?null:{id:this.lastHitId,distance};}
-    step(delta) {this.physics.Step(delta,1);this.particles.step(delta); this.steps=(this.steps||0)+1;}
+    step(delta) {if(this.physics)this.physics.Step(delta,1);this.particles.step(delta); this.steps=(this.steps||0)+1;}
     light(x,y,z,rgb,intensity) {
         const manager=this.engine.getLightManager(), instance=manager.getInstance(this.point);
         manager.setPosition(instance,[x,y,z]); manager.setColor(instance,this.color(rgb)); manager.setIntensity(instance,intensity);
@@ -240,7 +244,26 @@ class BrowserHost {
     connectApplication(frame,shutdown){
         this.applicationMode=true;
         for (const element of document.querySelectorAll('aside,header,footer')) element.hidden=true;
-        this.connect(dt=>frame(dt),shutdown);
+        const profile=new URLSearchParams(location.search).has('profileMemory');
+        let nextSample=0;
+        this.connect(dt=>{
+            frame(dt);
+            if(profile&&performance.now()>=nextSample){
+                nextSample=performance.now()+5000;
+                console.info('VALTHORNE_MEMORY '+JSON.stringify({
+                    heapUsed:performance.memory?.usedJSHeapSize??null,
+                    heapTotal:performance.memory?.totalJSHeapSize??null,
+                    filamentHeap:this.F.HEAPU8?.byteLength??null,
+                    physicsHeap:this.J?.HEAPU8?.byteLength??0,
+                    layoutHandles:this.yoga.objects.size,
+                    graphicsHandles:this.graphics.objects.size,
+                    images:this.graphics.images.size,
+                    vectorContexts:this.nano.contexts.size,
+                    renderers:[...this.sceneRenderers].map(r=>({meshes:r.meshes.size,entries:r.entries.length,lights:r.lights.length})),
+                    canvas:[canvas.width,canvas.height]
+                }));
+            }
+        },shutdown);
     }
     report(bodies,seconds) {
         this.javaBodies=bodies; this.javaSeconds=seconds;
@@ -264,13 +287,15 @@ class BrowserHost {
         e.destroyView(this.view);e.destroyScene(this.scene);e.destroyRenderer(this.renderer);e.destroySwapChain(this.swap);
         e.destroyCameraComponent(this.cameraEntity);this.F.EntityManager.get().destroy(this.cameraEntity);
         e.destroyMaterial(this.material);e.destroyVertexBuffer(this.mesh.vb);e.destroyIndexBuffer(this.mesh.ib);e.destroyIndirectLight(this.ambient);
-        this.F.Engine.destroy(e);this.J.destroy(this.physics);
+        this.F.Engine.destroy(e);if(this.physics)this.J.destroy(this.physics);
     }
 }
 
 try {
     if (!globalThis.WebAssembly) throw new Error('This browser does not support WebAssembly');
-    const [J,files]=await Promise.all([initJolt(),new BrowserFiles().initialize(),new Promise((resolve,reject)=>{
+    const physicsEnabled=document.querySelector('meta[name="valthorne-physics"]')?.content!=='disabled';
+    const physicsRuntime=loadPhysicsRuntime(physicsEnabled);
+    const [J,files]=await Promise.all([physicsRuntime,new BrowserFiles().initialize(),new Promise((resolve,reject)=>{
         if(!globalThis.Filament) {reject(new Error('Filament runtime could not be loaded'));return;}
         const timer=setTimeout(()=>reject(new Error('Filament startup timed out')),30000);
         Filament.init(['lit.filamat','particle.filamat','engine-surface.filamat','engine-alpha.filamat','engine-glass.filamat'],()=>{clearTimeout(timer);resolve();});

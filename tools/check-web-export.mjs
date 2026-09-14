@@ -4,6 +4,8 @@ import path from 'node:path';
 
 const root = process.argv[2] ? path.resolve(process.argv[2]) : path.resolve(import.meta.dirname, '../build/web');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+assert(html.includes('name="valthorne-physics" content="disabled"'), 'Document website must not initialize unused physics');
+assert(fs.existsSync(path.join(root, 'physics-runtime.js')), 'Physics runtime selector must ship');
 assert(!/Physics in the light|Scene controls|Drop a body|id="enter"/.test(html), 'Application export must not contain physics-demo UI');
 assert(!fs.existsSync(path.join(root,'branding/valthorne-logo.png')), 'Removed banner must not ship');
 assert(fs.existsSync(path.join(root,'fonts/mono.ttf')), 'Code font must ship');

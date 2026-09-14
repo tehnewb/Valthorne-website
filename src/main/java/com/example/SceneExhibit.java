@@ -28,7 +28,8 @@ final class SceneExhibit implements AutoCloseable {
         pointer = new PointLight3D().setColor(new Color(0xFFE9DEFF)).setIntensity(350).setRange(9).setCastsShadows(true);
         scene.addLight(pointer);
         scene.addLight(new PointLight3D().setPosition(4,0,3).setColor(new Color(0xFF8761DC)).setIntensity(200).setRange(9));
-        renderer.setQuality(FilamentRenderer3D.Quality.HIGH); renderer.setEnvironmentIntensity(40); renderer.setExposure(1.1f);
+        // A document does not need four-sample scene buffers or full-resolution AO.
+        renderer.setQuality(FilamentRenderer3D.Quality.PERFORMANCE); renderer.setEnvironmentIntensity(40); renderer.setExposure(1.1f);
         camera.setClipPlanes(.05f,40); camera.setFieldOfViewDegrees(FOV);
         camera.setPosition(0,-DISTANCE,0); camera.lookAt(0,0,0,0,0,1);
     }
