@@ -29,10 +29,11 @@ export class BrowserPlatform {
         on(canvas,'pointerdown',e=>{
             if(this.pointerId !== null && this.pointerId !== e.pointerId) return;
             if(this.pointerId === null)this.pointerId = e.pointerId;
-            if(this.canvas.setPointerCapture){
+            const isTouchOrPen = e.pointerType === 'touch' || e.pointerType === 'pen';
+            if(!isTouchOrPen && this.canvas.setPointerCapture){
                 try { this.canvas.setPointerCapture(e.pointerId); } catch (error) {}
             }
-            if(e.pointerType === 'touch' || e.pointerType === 'pen') e.preventDefault();
+            if(!isTouchOrPen) e.preventDefault();
             this.buttons.add(e.button);
             this.mouseButton(e,0);
             this.unlockAudio();
@@ -49,7 +50,8 @@ export class BrowserPlatform {
         });
         on(window,'pointermove',e=>{
             if(this.pointerId !== null && e.pointerId !== this.pointerId) return;
-            if(e.pointerType === 'touch' || e.pointerType === 'pen') e.preventDefault();
+            const isTouchOrPen = e.pointerType === 'touch' || e.pointerType === 'pen';
+            if(!isTouchOrPen) e.preventDefault();
             const locked=document.pointerLockElement===canvas;
             if(!locked && this.pointerId===null && e.target!==canvas)return;
             const fromX=this.mouseX,fromY=this.window.height-this.mouseY;

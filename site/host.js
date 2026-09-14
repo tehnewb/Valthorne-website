@@ -251,6 +251,7 @@ class BrowserHost {
         canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.contextLost=true;cancelAnimationFrame(this.raf);this.platform.resetInput();fail(new Error('Graphics context lost. Reload to restore the scene.'));});
         if (!document.querySelector('#enter')) return;
         const arena=new URLSearchParams(location.search).get('scene')==='arena';
+        const enableDrag = !isMobile();
         document.querySelector('#enter').hidden=!arena;
         document.querySelector('#drop').hidden=arena;
         if(arena){document.querySelector('h1').textContent='First-person integration arena';document.querySelector('#instructions').textContent='Enter arena to capture the mouse. WASD move, Shift sprint, Space jump, R reload, Escape release mouse.';}
@@ -259,15 +260,18 @@ class BrowserHost {
         document.querySelector('#reset').onclick=()=>this.commands|=2;
         document.querySelector('#pause').onclick=()=>{this.paused=!this.paused;document.querySelector('#pause').textContent=this.paused?'Resume simulation':'Pause simulation';};
         let draggingId=null,lastX=0,lastY=0;
+        if(enableDrag){
         const updateDrag=e=>{
             if (draggingId!==e.pointerId) return;
-            e.preventDefault();
+            const isTouchOrPen = e.pointerType === 'touch' || e.pointerType === 'pen';
+            if(!isTouchOrPen) e.preventDefault();
             this.yaw-=(e.clientX-lastX)*.006;
             this.pitch=Math.max(.05,Math.min(1.3,this.pitch+(e.clientY-lastY)*.006));
             lastX=e.clientX;lastY=e.clientY;
         };
         const startDrag=e=>{
             if(arena||this.applicationMode||draggingId!==null) return;
+            if(e.pointerType === 'touch' || e.pointerType === 'pen') return;
             draggingId=e.pointerId;lastX=e.clientX;lastY=e.clientY;
             if (canvas.setPointerCapture) {try {canvas.setPointerCapture(e.pointerId);} catch (error) { }}
         };
@@ -283,6 +287,7 @@ class BrowserHost {
         window.addEventListener('pointerup', stopDrag, {passive:false, signal:this.platform.events.signal});
         window.addEventListener('pointercancel', stopDrag, {passive:false, signal:this.platform.events.signal});
         canvas.addEventListener('lostpointercapture', () => {draggingId=null;}, {signal:this.platform.events.signal});
+        }
         canvas.addEventListener('wheel',e=>{if(this.applicationMode)return;e.preventDefault();this.distance=Math.max(7,Math.min(40,this.distance*Math.exp(e.deltaY*.001)));},{passive:false,signal:this.platform.events.signal});
     }
     connect(frame,shutdown) {
