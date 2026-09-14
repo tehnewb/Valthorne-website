@@ -270,13 +270,12 @@ class BrowserHost {
 
 try {
     if (!globalThis.WebAssembly) throw new Error('This browser does not support WebAssembly');
-    const J=await initJolt();
-    globalThis.valthorneFiles=await new BrowserFiles().initialize();
-    await new Promise((resolve,reject)=>{
+    const [J,files]=await Promise.all([initJolt(),new BrowserFiles().initialize(),new Promise((resolve,reject)=>{
         if(!globalThis.Filament) {reject(new Error('Filament runtime could not be loaded'));return;}
         const timer=setTimeout(()=>reject(new Error('Filament startup timed out')),30000);
         Filament.init(['lit.filamat','particle.filamat','engine-surface.filamat','engine-alpha.filamat','engine-glass.filamat'],()=>{clearTimeout(timer);resolve();});
-    });
+    })]);
+    globalThis.valthorneFiles=files;
     globalThis.valthorneHost=new BrowserHost(J,Filament);
     valthorneHost.compute=await BrowserCompute.create(valthorneHost);
     main();

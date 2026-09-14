@@ -28,18 +28,30 @@ public final class Main implements Application {
 
     public static void main(String[] args) { JGL.init(new Main(), "Valthorne — Worlds begin with you.", 1440, 960); }
     @Override public void init() {
+        long started = System.nanoTime();
         ui = new UIRoot();
         NanoUtility.loadResourceFont(ui.getNanoVGHandle(), "editorial", "fonts/editorial.ttf");
-        banner = TextureData.load("branding/valthorne-logo.png", true);
+        try(var image=Main.class.getResourceAsStream("/branding/valthorne-logo.png")) {
+            if(image==null)throw new java.io.IOException("Missing banner");
+            banner=TextureData.load(image.readAllBytes(),true);
+        } catch(java.io.IOException error){throw new java.io.UncheckedIOException(error);}
         exhibit = new SceneExhibit(); rebuild();
+        System.out.println("Website UI initialized in " + (System.nanoTime()-started)/1000000 + " ms");
     }
     private void rebuild() {
         float saved = scroll == null ? 0 : scroll.getScrollY();
         width = Window.getWidth(); height = Window.getHeight();
         float gutter = width < 600 ? 22 : width * .05f;
-        ui.clear(); ui.setSize(width, height); navigating = false;
-        var root = panel(CLEAR); root.getLayout().widthPercent(100).heightPercent(100).column(); ui.add(root);
-        var ribbon = panel(INK);
+        ui.clear(); exhibit.clearSurfaces(); ui.setSize(width, height); navigating = false;
+        var root = new NanoContainer() {
+            @Override public void draw(long vg) {
+                float px=Mouse.getX(), py=Window.getHeight()-Mouse.getY();
+                for(int i=5;i>0;i--)NanoUtility.strokeCircle(vg,px,py,i*3,0x0A9F8FFF,6);
+                NanoUtility.strokeCircle(vg,px,py,2,0xFFFFFFFF,3);
+                super.draw(vg);
+            }
+        }; root.getLayout().widthPercent(100).heightPercent(100).column(); ui.add(root);
+        var ribbon = panel(CLEAR);
         ribbon.getLayout().widthPercent(100).height(92).row().itemsCenter().padding(gutter, 18).noShrink();
         var left = new NanoContainer(); left.getLayout().width(0).grow();
         if (width >= 800) left.add(label("Open source  /  Java 25", 12, MUTED)); ribbon.add(left);
@@ -62,15 +74,7 @@ public final class Main implements Application {
         var copy = new NanoContainer(); copy.getLayout().column().gap(14).noShrink().widthPercent(width < 700 ? 100 : 47);
         copy.add(label("valthorne", width < 700 ? 64 : Math.min(104, width * .075f), WHITE));
         copy.add(label("An open Java engine for extraordinary worlds.\nRendering, physics, audio and UI. Together.", width < 700 ? 14 : 17, MUTED)); row.add(copy);
-        exhibitSlot = new NanoContainer() {
-            @Override public void draw(long vg) {
-                float px = Mouse.getX(), py = Window.getHeight() - Mouse.getY() + scroll.getScrollY();
-                if (px < getAbsoluteX() || px > getAbsoluteX() + getWidth() || py < getAbsoluteY() || py > getAbsoluteY() + getHeight()) return;
-                // A restrained visible source accompanies the real 3D point light.
-                for (int i = 5; i > 0; i--) NanoUtility.strokeCircle(vg,px,py,i*3,0x0A9F8FFF,6);
-                NanoUtility.strokeCircle(vg,px,py,2,0xFFFFFFFF,3);
-            }
-        }; exhibitSlot.setClickable(false);
+        exhibitSlot = new NanoContainer(); exhibitSlot.setClickable(false);
         exhibitSlot.getLayout().height(width < 700 ? 350 : Math.max(390, Math.min(540, height * .58f))).noShrink();
         if (width < 700) exhibitSlot.getLayout().widthPercent(100); else exhibitSlot.getLayout().width(0).grow();
         row.add(exhibitSlot); hero.add(row); content.add(hero);
@@ -98,11 +102,12 @@ public final class Main implements Application {
         var card = new NanoContainer(); card.getLayout().column().gap(9).noShrink();
         if (width >= 700) card.getLayout().width(0).grow(); else card.getLayout().widthPercent(100);
         var art = new ShowcaseArt(kind, () -> time);
+        exhibit.addSurface(art);
         art.getLayout().widthPercent(100).height(width < 700 ? 230 : Math.min(340, width * .24f)).noShrink();
         card.add(art); card.add(label(title, 30, WHITE)); card.add(label(body, width < 700 ? 12 : 13, MUTED)); card.add(button(link, action)); return card;
     }
     private NanoPanel section(Color color, float gutter, float vertical) {
-        var p = panel(color); p.getLayout().widthPercent(100).column().padding(gutter, vertical).noShrink(); return p;
+        var p = panel(CLEAR); p.getLayout().widthPercent(100).column().padding(gutter, vertical).noShrink(); return p;
     }
     private NanoLabel label(String text, float size, Color color) {
         var label = new NanoLabel(text); label.fontName(size >= 24 ? "editorial" : "default").fontSize(size).color(color).selectable(true);

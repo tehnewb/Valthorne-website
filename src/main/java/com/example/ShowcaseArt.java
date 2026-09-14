@@ -10,7 +10,7 @@ final class ShowcaseArt extends NanoPanel {
     private final DoubleSupplier clock;
     ShowcaseArt(int kind, DoubleSupplier clock) {
         this.kind = kind; this.clock = clock;
-        backgroundColor(Main.PANEL).hoverBackgroundColor(Main.PANEL).focusedBackgroundColor(Main.PANEL).pressedBackgroundColor(Main.PANEL);
+        backgroundColor(Main.CLEAR).hoverBackgroundColor(Main.CLEAR).focusedBackgroundColor(Main.CLEAR).pressedBackgroundColor(Main.CLEAR);
         cornerRadius(12).borderWidth(1).borderColor(Main.LINE).hoverBorderColor(Main.LINE);
         setClickable(false);
     }

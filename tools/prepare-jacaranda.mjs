@@ -41,8 +41,8 @@ for(const [part,p] of gltf.meshes[0].primitives.entries()){
     for(let i=0;i<reduced.length;i+=3)obj.push('f '+[0,1,2].map(j=>{const n=used.get(reduced[i+j]);return `${n}/${n}/${n}`;}).join(' '));
     base+=used.size;report.push({part:parts[part],sourceTriangles:indices.length/3,triangles:reduced.length/3,vertices:used.size,error});
 }
-fs.writeFileSync(path.join(output,'tree.obj'),obj.join('\n')+'\n');
-fs.writeFileSync(path.join(output,'tree.mtl'),parts.map(p=>`newmtl ${p}\nKd 1 1 1\nmap_Kd ${p==='leaves'?'leaves.png':p+'.jpg'}\n`).join('\n'));
+fs.writeFileSync(path.join(source,'tree.obj'),obj.join('\n')+'\n');
+fs.writeFileSync(path.join(source,'tree.mtl'),parts.map(p=>`newmtl ${p}\nKd 1 1 1\nmap_Kd ${p==='leaves'?'leaves.png':p+'.jpg'}\n`).join('\n'));
 // Pack the supplied opacity mask into the diffuse texture's alpha channel.
 const alpha=await sharp(path.join(source,'leaves_alpha.png')).extractChannel(0).toBuffer();
 await sharp(path.join(source,'leaves.jpg')).removeAlpha().joinChannel(alpha).png().toFile(path.join(output,'leaves.png'));

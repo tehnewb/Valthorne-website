@@ -22,7 +22,9 @@ jobs:
         with:
           node-version: '24'
       - name: Verify the prepared Java application export
-        run: node tools/check-web-export.mjs site
+        run: |
+          node tools/check-packed-tree.mjs
+          node tools/check-web-export.mjs site
       - name: Configure Pages
         if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5

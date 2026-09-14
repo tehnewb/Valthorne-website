@@ -1,69 +1,77 @@
 package com.example;
 
+import java.util.ArrayList;
 import valthorne.Window;
 import valthorne.Mouse;
-import valthorne.PlatformTools;
 import valthorne.camera.PerspectiveCamera;
 import valthorne.graphics.Color;
 import valthorne.graphics.model.*;
 import valthorne.ui.UINode;
-import java.io.IOException;
 
-/** Real textured geometry, submitted to the engine's Filament renderer, never a rendered image. */
+/** One full-window scene shared by the hero and every UI surface. */
 final class SceneExhibit implements AutoCloseable {
     private final Scene3D scene = new Scene3D();
     private final PerspectiveCamera camera = new PerspectiveCamera();
     private final FilamentRenderer3D renderer = new FilamentRenderer3D();
-    private final ObjModel3D tree;
-    private final ModelInstance3D jacaranda;
-    private final PointLight3D key, rim;
-    private float yaw, previousTime, lightX, lightZ = 3;
+    private final Model3D plane = ModelBuilder3D.plane(1,1);
+    private final ModelInstance3D background;
+    private final PointLight3D pointer;
+    private final ArrayList<UINode> nodes = new ArrayList<>();
+    private final ArrayList<ModelInstance3D> surfaces = new ArrayList<>();
+    private PackedTree tree;
+    private float lightX, lightZ, previousTime;
+    private int frames;
+    private static final float DISTANCE=9, FOV=37;
 
     SceneExhibit() {
-        tree = load("jacaranda/tree");
-        for (var part : tree.getParts()) part.material().setRoughness(.85f).setAlphaCutoff(.45f).setCullBackFaces(false);
-        var bounds = tree.getLocalBounds();
-        float scale = 3.6f / Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
-        jacaranda = new ModelInstance3D().setModel(tree)
-                .setMaterial(new Material3D().setRoughness(.85f).setAlphaCutoff(.45f).setCullBackFaces(false))
-                .setScale(scale).setPosition(0, 0, 0);
-        scene.add(jacaranda);
-        key = new PointLight3D().setPosition(-3,-4,5).setColor(new Color(0xFFE9E5FF)).setIntensity(1800).setRange(15).setCastsShadows(true);
-        rim = new PointLight3D().setPosition(3,2,3.3f).setColor(new Color(0xFF9472FF)).setIntensity(1400).setRange(12);
-        scene.addLight(key); scene.addLight(rim);
-        scene.addLight(new PointLight3D().setPosition(-3,1,1.4f).setColor(new Color(0xFF7098DB)).setIntensity(180).setRange(10));
-        renderer.setQuality(FilamentRenderer3D.Quality.HIGH); renderer.setEnvironmentIntensity(55); renderer.setExposure(1.15f);
-        camera.setClipPlanes(.05f, 60); camera.setFieldOfViewDegrees(37);
+        background=surface(new Color(0xFF08070B)); background.setPosition(0,1,0); scene.add(background);
+        pointer = new PointLight3D().setColor(new Color(0xFFE9DEFF)).setIntensity(1100).setRange(9).setCastsShadows(true);
+        scene.addLight(pointer);
+        scene.addLight(new PointLight3D().setPosition(4,0,3).setColor(new Color(0xFF8761DC)).setIntensity(500).setRange(9));
+        renderer.setQuality(FilamentRenderer3D.Quality.HIGH); renderer.setEnvironmentIntensity(40); renderer.setExposure(1.1f);
+        camera.setClipPlanes(.05f,40); camera.setFieldOfViewDegrees(FOV);
+        camera.setPosition(0,-DISTANCE,0); camera.lookAt(0,0,0,0,0,1);
     }
-    private static ObjModel3D load(String name) {
-        return ObjModel3D.load("models/" + name + ".obj", path -> {
-            try (var input = SceneExhibit.class.getResourceAsStream("/" + path.replace('\\','/'))) {
-                if(input==null) throw new IOException("Missing model asset: " + path);
-                return input.readAllBytes();
+    private ModelInstance3D surface(Color color) {
+        return new ModelInstance3D().setModel(plane).setRotation((float)Math.PI/2,0,0)
+            .setMaterial(new Material3D().setTint(color).setRoughness(.7f).setCullBackFaces(false));
+    }
+    void clearSurfaces() {
+        for(var surface:surfaces)scene.remove(surface);
+        nodes.clear(); surfaces.clear();
+    }
+    void addSurface(UINode node) {
+        var surface=surface(new Color(0xFF1A1721)); nodes.add(node); surfaces.add(surface); scene.add(surface);
+    }
+    void render(UINode slot,float scrollY,float time,boolean moving) {
+        int w=Window.getWidth(), h=Window.getHeight(); if(w<1||h<1)return;
+        float scale=2*DISTANCE*(float)Math.tan(Math.toRadians(FOV/2))/h;
+        float dt=Math.max(0,Math.min(.05f,time-previousTime)); previousTime=time;
+        float response=moving?1-(float)Math.exp(-dt*12):1;
+        float mx=(Mouse.getX()-w*.5f)*scale, mz=(Mouse.getY()-h*.5f)*scale;
+        lightX+=(mx-lightX)*response; lightZ+=(mz-lightZ)*response;
+        pointer.setPosition(lightX,-1.7f,lightZ);
+        background.setScale(w*scale*2,h*scale*2,1);
+        for(int i=0;i<nodes.size();i++) {
+            var node=nodes.get(i); var surface=surfaces.get(i);
+            float top=node.getAbsoluteY()-scrollY;
+            surface.setPosition((node.getAbsoluteX()+node.getWidth()/2-w*.5f)*scale,.1f,(h*.5f-top-node.getHeight()/2)*scale);
+            surface.setScale(node.getWidth()*scale,node.getHeight()*scale,1);
+        }
+        // Present the UI before decoding geometry, rather than blocking Application.init.
+        if(tree==null && frames++>=2) {
+            long started=System.nanoTime(); tree=new PackedTree(scene);
+            System.out.println("Packed tree constructed in " + (System.nanoTime()-started)/1000000 + " ms");
+        }
+        if(tree!=null) {
+            float top=slot.getAbsoluteY()-scrollY;
+            float size=slot.getWidth()*scale*.94f/tree.width;
+            for(var part:tree.parts) {
+                part.setScale(size).setPosition((slot.getAbsoluteX()+slot.getWidth()*.5f-w*.5f)*scale,-.2f,(h*.5f-top-slot.getHeight()*.88f)*scale);
+                part.setRotation(0,0,moving?mx*.025f+scrollY*.0002f:0);
             }
-        }, true);
+        }
+        renderer.render(scene,camera);
     }
-    void render(UINode slot, float scrollY, float time, boolean moving) {
-        float top = slot.getAbsoluteY() - scrollY;
-        int x = Math.round(slot.getAbsoluteX()), y = Math.round(Window.getHeight() - top - slot.getHeight());
-        int w = Math.round(slot.getWidth()), h = Math.round(slot.getHeight());
-        if (w < 1 || h < 1 || top >= Window.getHeight() || top + h <= 78) return;
-        float mx = Math.max(-1, Math.min(1, (Mouse.getX() - slot.getAbsoluteX()) / w * 2 - 1));
-        float my = Math.max(-1, Math.min(1, (Window.getHeight() - Mouse.getY() - top) / h * 2 - 1));
-        float target = moving ? mx * .13f + scrollY * .00035f : yaw;
-        float elapsed = Math.max(0, Math.min(.05f, time - previousTime));
-        previousTime = time;
-        float response = moving ? 1 - (float)Math.exp(-9 * elapsed) : 1;
-        key.setIntensity(key.getIntensity() + (2200 - key.getIntensity()) * response);
-        lightX += (mx * 3.2f - lightX) * response;
-        lightZ += ((1 - my) * 2.3f - lightZ) * response;
-        key.setPosition(lightX, -2.2f, lightZ);
-        yaw += (target-yaw)*response;
-        jacaranda.setRotation(0,0,yaw);
-        camera.setPosition(mx * .12f,-6.2f,2.8f); camera.lookAt(0,0,1.55f,0,0,1);
-        PlatformTools.viewport(x,y,w,h);
-        try { renderer.render(scene,camera); }
-        finally { PlatformTools.viewport(0,0,Window.getWidth(),Window.getHeight()); }
-    }
-    @Override public void close() { renderer.close(); tree.dispose(); }
+    @Override public void close(){renderer.close();if(tree!=null)tree.close();}
 }

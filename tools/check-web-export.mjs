@@ -8,7 +8,7 @@ assert(!/Physics in the light|Scene controls|Drop a body|id="enter"/.test(html),
 for (const [, resource] of html.matchAll(/<script[^>]*src="([^"]+)"/g)) {
     assert(fs.existsSync(path.join(root, resource)), `Missing startup resource: ${resource}`);
 }
-for (const resource of ['models/jacaranda/tree.obj', 'models/jacaranda/tree.mtl', 'models/jacaranda/leaves.png']) {
+for (const resource of ['models/jacaranda/tree.vtr.gz', 'models/jacaranda/leaves.png']) {
     assert(fs.statSync(path.join(root, resource)).size > 0, `Missing tree resource: ${resource}`);
 }
 console.log('Web export verified: clean application shell, startup scripts and tree resources.');
