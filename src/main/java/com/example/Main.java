@@ -56,7 +56,14 @@ public final class Main implements Application {
         nav.getLayout().row().itemsCenter().padding(8).gap(3).noShrink();
         nav.add(button("Home", () -> {if(page>=0)pendingPage=-1;else navigate(null);}));
         nav.add(button("Explore", () -> {if(page>=0)pendingPage=-1;else navigate(projects);}));
-        nav.add(button("About", () -> navigate(about)));
+        var github = new NanoHyperlink("GitHub", "https://github.com/tehnewb/Valthorne");
+        github.setStyle(NanoHyperlink.FONT_SIZE_KEY,12f);
+        github.setStyle(NanoHyperlink.PADDING_X_KEY,17f);
+        github.setStyle(NanoHyperlink.COLOR_KEY,MUTED);
+        github.setStyle(NanoHyperlink.VISITED_COLOR_KEY,MUTED);
+        github.setStyle(NanoHyperlink.HOVER_COLOR_KEY,WHITE);
+        github.setStyle(NanoHyperlink.FOCUSED_COLOR_KEY,WHITE);
+        github.getLayout().height(34).noShrink();nav.add(github);
         var pause = button(motion ? "Ⅱ" : "▷", () -> {});
         pause.action(n -> { motion = !motion; pause.text(motion ? "Ⅱ" : "▷"); }); nav.add(pause); ribbon.add(nav);
         var right = new NanoContainer(); right.getLayout().width(0).grow().itemsEnd();
