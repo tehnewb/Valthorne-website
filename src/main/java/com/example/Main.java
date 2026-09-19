@@ -4,6 +4,11 @@ import valthorne.Application;
 import valthorne.JGL;
 import valthorne.Mouse;
 import valthorne.Window;
+import valthorne.event.events.MouseDragEvent;
+import valthorne.event.events.MouseMoveEvent;
+import valthorne.event.events.MousePressEvent;
+import valthorne.event.events.MouseReleaseEvent;
+import valthorne.event.listeners.MouseListener;
 import valthorne.graphics.Color;
 import valthorne.ui.NanoUtility;
 import valthorne.ui.UINode;
@@ -27,6 +32,28 @@ public final class Main implements Application {
     private int width, height;
     private float time, navTime, navFrom, navTo, lastScroll;
     private boolean motion = true, navigating;
+    private boolean pageDrag;
+    private final MouseListener pageDragListener = new MouseListener() {
+        @Override
+        public void mousePressed(MousePressEvent event) {
+            if (event.getButton() != Mouse.LEFT || event.isConsumed() || ui == null || scroll == null) return;
+            pageDrag = shouldPageDrag(event.getX(), event.getY());
+        }
+
+        @Override
+        public void mouseReleased(MouseReleaseEvent event) {
+            if (event.getButton() == Mouse.LEFT) pageDrag = false;
+        }
+
+        @Override
+        public void mouseDragged(MouseDragEvent event) {
+            if (!pageDrag || event.getButton() != Mouse.LEFT || event.isConsumed() || scroll == null) return;
+            scroll.scrollBy(0, -event.getDeltaY());
+        }
+
+        @Override
+        public void mouseMoved(MouseMoveEvent event) {}
+    };
 
     public static void main(String[] args) {JGL.init(new Main(), "Valthorne — Worlds begin with you.", 1440, 960);}
 
@@ -37,6 +64,7 @@ public final class Main implements Application {
         NanoUtility.loadResourceFont(ui.getNanoVGHandle(), "editorial", "fonts/editorial.ttf");
         NanoUtility.loadResourceFont(ui.getNanoVGHandle(), "code", "fonts/mono.ttf");
         exhibit = new SceneExhibit();
+        Mouse.addMouseListener(pageDragListener);
         rebuild();
         System.out.println("Website UI initialized in " + (System.nanoTime() - started) / 1000000 + " ms");
     }
@@ -318,6 +346,11 @@ public final class Main implements Application {
         }
     }
 
+    private boolean shouldPageDrag(float x, float y) {
+        UINode target = ui.findNodeAt(x, y, UINode.CLICKABLE_BIT);
+        return target == null || target == scroll || target == ui;
+    }
+
     @Override
     public void render() {
         Window.clear(INK);
@@ -327,6 +360,7 @@ public final class Main implements Application {
 
     @Override
     public void dispose() {
+        Mouse.removeMouseListener(pageDragListener);
         if (ui != null) ui.dispose();
         if (exhibit != null) exhibit.close();
     }

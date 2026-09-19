@@ -87,8 +87,7 @@ export class BrowserSceneRenderer {
         this.check();const h=this.host,canvas=h.platform.canvas||document.querySelector('#scene');
         h.graphics.context();
         h.graphics.resize();h.graphics.clearOverlay();
-        const w=h.renderWidth || h.canvasWidth || Math.max(1,Math.round(canvas.clientWidth));
-        const height=h.renderHeight || h.canvasHeight || Math.max(1,Math.round(canvas.clientHeight));
+        const ratio=Math.max(1,Math.min(window.devicePixelRatio||1,2)),w=Math.max(1,Math.round(canvas.clientWidth*ratio)),height=Math.max(1,Math.round(canvas.clientHeight*ratio));
         if(canvas.width!==w||canvas.height!==height){canvas.width=w;canvas.height=height;}
         this.view.setViewport([0,0,w,height]);this.camera.setCustomProjection(projection,near,far);this.camera.setModelMatrix(model);
         h.renderer.render(h.swap,this.view);h.frames++;globalThis.valthorneReady=true;

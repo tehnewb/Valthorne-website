@@ -16,12 +16,7 @@ import { BrowserCompute } from './compute.js';
 const canvas = document.querySelector('#scene');
 const status = document.querySelector('#stats') || document.querySelector('#status');
 const errorBox = document.querySelector('#error');
-const isMobile = () => typeof matchMedia === 'function' && (matchMedia('(pointer: coarse)').matches || matchMedia('(hover: none)').matches);
-const getDevicePixelRatio = () => {
-  const deviceRatio = Number(window.devicePixelRatio) || 1;
-  const maxRatio = isMobile() ? 3 : 2;
-  return Math.max(1, Math.min(deviceRatio, maxRatio));
-};
+const getDevicePixelRatio = () => Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
 function fail(error) {
     errorBox.textContent = `Unable to run the scene: ${error.message || error}`;
     errorBox.style.display = 'block';
@@ -64,11 +59,6 @@ class BrowserHost {
         this.J=J; this.F=F; this.objects=[]; this.materials=new Map(); this.closed=false;
         this.physicsWorlds=new Set();
         this.sceneRenderers=new Set();
-        this.canvasWidth = 1;
-        this.canvasHeight = 1;
-        this.renderWidth = 1;
-        this.renderHeight = 1;
-        this.pendingResize = false;
         this.graphics=new BrowserGraphics(this);
         this.audioBackend=new BrowserAudio(this);this.fonts=new BrowserFonts();
         this.yoga=new BrowserYoga();
@@ -112,33 +102,6 @@ class BrowserHost {
         this.assets=new BrowserAssets(F,e,this.scene);
         this.media=new BrowserMedia(this);
         this.particles=new BrowserParticles(this);
-        this.resizeCanvas = () => {
-            const ratio = getDevicePixelRatio();
-            const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
-            const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
-            if (canvas.width !== width || canvas.height !== height) {
-                canvas.width = width;
-                canvas.height = height;
-                this.view.setViewport([0, 0, width, height]);
-            }
-            this.canvasWidth = Math.max(1, Math.round(canvas.clientWidth));
-            this.canvasHeight = Math.max(1, Math.round(canvas.clientHeight));
-            this.renderWidth = width;
-            this.renderHeight = height;
-        };
-        this.resize = () => {
-            if (this.pendingResize) return;
-            this.pendingResize = true;
-            requestAnimationFrame(() => {
-                this.pendingResize = false;
-                this.resizeCanvas();
-            });
-        };
-        window.addEventListener('resize', this.resize, {passive: true, signal: this.platform.events.signal});
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', this.resize, {passive: true, signal: this.platform.events.signal});
-        }
-        this.resizeCanvas();
         this.input();
     }
     color(rgb) {return [(rgb>>16&255)/255,(rgb>>8&255)/255,(rgb&255)/255];}
@@ -229,10 +192,10 @@ class BrowserHost {
         manager.setTransform(instance,m); instance.delete();
     }
     render() {
-        const width=this.renderWidth || (this.canvasWidth || Math.max(1, Math.round(canvas.clientWidth)));
-        const height=this.renderHeight || (this.canvasHeight || Math.max(1, Math.round(canvas.clientHeight)));
-        this.camera.setProjectionFov(this.firstPerson?.fov||45,width/height,.1,100,this.F.Camera$Fov.VERTICAL);
-        const d=this.distance*Math.max(1,Math.sqrt(height/width)),c=Math.cos(this.pitch);
+        const ratio=getDevicePixelRatio(),w=Math.max(1,Math.round(canvas.clientWidth*ratio)),h=Math.max(1,Math.round(canvas.clientHeight*ratio));
+        if (canvas.width!==w||canvas.height!==h) {canvas.width=w;canvas.height=h;this.view.setViewport([0,0,w,h]);}
+        this.camera.setProjectionFov(this.firstPerson?.fov||45,w/h,.1,100,this.F.Camera$Fov.VERTICAL);
+        const d=this.distance*Math.max(1,Math.sqrt(h/w)),c=Math.cos(this.pitch);
         this.camera.lookAt([Math.sin(this.yaw)*c*d,3+Math.sin(this.pitch)*d,Math.cos(this.yaw)*c*d],[0,2,0],[0,1,0]);
         if(this.firstPerson){const {x,y,z,yaw,pitch}=this.firstPerson,cp=Math.cos(pitch);this.camera.lookAt([x,y,z],[x+Math.sin(yaw)*cp,y+Math.sin(pitch),z-Math.cos(yaw)*cp],[0,1,0]);}
         for (const object of this.objects) this.transform(object);
@@ -251,7 +214,6 @@ class BrowserHost {
         canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.contextLost=true;cancelAnimationFrame(this.raf);this.platform.resetInput();fail(new Error('Graphics context lost. Reload to restore the scene.'));});
         if (!document.querySelector('#enter')) return;
         const arena=new URLSearchParams(location.search).get('scene')==='arena';
-        const enableDrag = !isMobile();
         document.querySelector('#enter').hidden=!arena;
         document.querySelector('#drop').hidden=arena;
         if(arena){document.querySelector('h1').textContent='First-person integration arena';document.querySelector('#instructions').textContent='Enter arena to capture the mouse. WASD move, Shift sprint, Space jump, R reload, Escape release mouse.';}
@@ -260,18 +222,15 @@ class BrowserHost {
         document.querySelector('#reset').onclick=()=>this.commands|=2;
         document.querySelector('#pause').onclick=()=>{this.paused=!this.paused;document.querySelector('#pause').textContent=this.paused?'Resume simulation':'Pause simulation';};
         let draggingId=null,lastX=0,lastY=0;
-        if(enableDrag){
         const updateDrag=e=>{
             if (draggingId!==e.pointerId) return;
-            const isTouchOrPen = e.pointerType === 'touch' || e.pointerType === 'pen';
-            if(!isTouchOrPen) e.preventDefault();
+            e.preventDefault();
             this.yaw-=(e.clientX-lastX)*.006;
             this.pitch=Math.max(.05,Math.min(1.3,this.pitch+(e.clientY-lastY)*.006));
             lastX=e.clientX;lastY=e.clientY;
         };
         const startDrag=e=>{
             if(arena||this.applicationMode||draggingId!==null) return;
-            if(e.pointerType === 'touch' || e.pointerType === 'pen') return;
             draggingId=e.pointerId;lastX=e.clientX;lastY=e.clientY;
             if (canvas.setPointerCapture) {try {canvas.setPointerCapture(e.pointerId);} catch (error) { }}
         };
@@ -287,7 +246,6 @@ class BrowserHost {
         window.addEventListener('pointerup', stopDrag, {passive:false, signal:this.platform.events.signal});
         window.addEventListener('pointercancel', stopDrag, {passive:false, signal:this.platform.events.signal});
         canvas.addEventListener('lostpointercapture', () => {draggingId=null;}, {signal:this.platform.events.signal});
-        }
         canvas.addEventListener('wheel',e=>{if(this.applicationMode)return;e.preventDefault();this.distance=Math.max(7,Math.min(40,this.distance*Math.exp(e.deltaY*.001)));},{passive:false,signal:this.platform.events.signal});
     }
     connect(frame,shutdown) {

@@ -33,7 +33,7 @@ publish or modify the live GitHub Pages website.
 - Card previews and their feature links open eight distinct in-application documentation pages covering 3D rendering, lighting, the application lifecycle, UI, audio, physics, animation and viewports. Each includes practical explanations and a code snippet. Home/All features returns to the landing page. These Java views do not change the browser URL.
 - Cards lift and tilt on hover. Their materials no longer cast the large shadow bands across the page.
 - Code blocks use JetBrains Mono with syntax highlighting and horizontal scrolling. Copy code exports the original snippet, including whitespace; selection is also supported.
-- Each feature page contains five code examples (40 total), with prerequisite notes and jump links. Fragments assume the named resources already exist; they are not standalone game files unless shown as a complete class.
+- Each feature page contains nine code examples (72 total), progressing from setup through runtime control, diagnostics, cleanup and production-minded patterns. Every example includes prerequisite notes and a jump link. Fragments assume the named resources already exist; they are not standalone game files unless shown as a complete class.
 - Desktop documentation uses an independently scrolling left sidebar, with the current chapter's example links expanded. Narrow screens use an inline example list.
 - This document-only export passes `-PwebPhysics=false`: the snippets describe physics APIs but do not execute a physics simulation. Game exports retain physics by default. Scene rendering uses PERFORMANCE quality (no MSAA, half-resolution ambient occlusion).
 
