@@ -353,8 +353,10 @@ public final class Main implements Application {
 
     @Override
     public void render() {
-        Window.clear(INK);
         exhibit.render(exhibitSlot, scroll.getScrollY(), time, motion);
+        // Scene uploads can take part of a frame. Keep the previous completed UI
+        // visible until they finish, then replace it in one presentation step.
+        Window.clear(INK);
         ui.draw();
     }
 
