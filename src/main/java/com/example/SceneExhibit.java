@@ -22,6 +22,7 @@ final class SceneExhibit implements AutoCloseable {
     private final ArrayList<UINode> nodes = new ArrayList<>();
     private final ArrayList<ModelInstance3D> surfaces = new ArrayList<>();
     private PackedTree tree;
+    private long treeLoadStarted;
     private float lightX, lightZ, lightTargetX, lightTargetZ, previousTime;
     private int frames;
     private static final float DISTANCE = 9, FOV = 37, LIGHT_INPUT_SMOOTHING = 14, LIGHT_FOLLOW_SMOOTHING = 6;
@@ -95,17 +96,18 @@ final class SceneExhibit implements AutoCloseable {
             surface.setRotation((float) Math.PI / 2 + dy * hover * .065f, 0, -dx * hover * .045f);
             surface.setScale(node.getWidth() * projected, node.getHeight() * projected, 1);
         }
-        // Present the UI before decoding geometry, rather than blocking Application.init.
+        // Decode and upload bounded chunks while the already-presented UI remains responsive.
         if (slot != null && tree == null && frames++ >= 2) {
-            long started = System.nanoTime();
-            tree = new PackedTree(scene);
-            System.out.println("Packed tree constructed in " + (System.nanoTime() - started) / 1000000 + " ms");
+            treeLoadStarted = System.nanoTime();
+            tree = new PackedTree();
         }
-        if (tree != null) for (var part : tree.parts) part.setVisible(slot != null);
+        if (tree != null && !tree.isComplete() && tree.advance(scene))
+            System.out.println("Packed tree streamed in " + (System.nanoTime() - treeLoadStarted) / 1000000 + " ms");
+        if (tree != null) for (var part : tree.parts()) part.setVisible(slot != null);
         if (tree != null && slot != null) {
             float top = slot.getAbsoluteY() - scrollY;
             float size = Math.min(slot.getWidth() * .94f / tree.width, slot.getHeight() * .82f / tree.height) * scale;
-            for (var part : tree.parts) {
+            for (var part : tree.parts()) {
                 part.setScale(size).setPosition((slot.getAbsoluteX() + slot.getWidth() * .5f - w * .5f) * scale, -.2f, (h * .5f - top - slot.getHeight() * .88f) * scale);
                 part.setRotation(0, 0, moving ? mx * .025f + scrollY * .0002f : 0);
             }
