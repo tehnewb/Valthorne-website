@@ -5,6 +5,8 @@ package com.example;
  */
 record FeaturePage(String title, String summary, String highlights, String details, String code) {
     String wikiUrl() {
+        String generated = WikiFeatureCatalog.wikiUrl(title);
+        if (generated != null) return generated;
         String page = switch (title) {
             case "3D scenes & Filament" -> "04-Graphics-3D-Overview";
             case "2D & 3D lighting" -> "05-Lighting-Overview";
@@ -27,7 +29,13 @@ record FeaturePage(String title, String summary, String highlights, String detai
         return "https://github.com/tehnewb/Valthorne/wiki/" + page;
     }
 
+    int artKind() {
+        return WikiFeatureCatalog.artKind(title);
+    }
+
     String[] topics() {
+        String[] generated = WikiFeatureCatalog.topics(title);
+        if (generated.length > 0) return generated;
         return switch (title) {
             case "3D scenes & Filament" -> new String[]{
                     "Build the scene", "Separate reusable model geometry from instances.\nPlace, rotate and scale each instance without\nrebuilding the source mesh. Compose props and\nenvironments around a perspective camera.",
@@ -96,7 +104,7 @@ record FeaturePage(String title, String summary, String highlights, String detai
         };
     }
 
-    static final FeaturePage[] PAGES = {
+    static final FeaturePage[] LEGACY_PAGES = {
             new FeaturePage("3D scenes & Filament", "Scene3D, model instances, PBR materials and culling.", "SCENE3D  ·  FILAMENT  ·  MODELINSTANCE3D  ·  OPENGL 3.3",
                     "Build a Scene3D from model instances.\nEach instance has its own transform and material.\nUse textures, roughness and metallic surfaces\nto give objects their character.\n\nA perspective camera frames the world;\nFilamentRenderer3D renders its geometry and lights.",
                     "// Add a material-backed model to a scene\nvar scene = new Scene3D();\nvar material = new Material3D()\n    .setRoughness(0.7f);\nvar object = new ModelInstance3D()\n    .setModel(ModelBuilder3D.box(1, 1, 1))\n    .setMaterial(material);\nscene.add(object);"),
@@ -146,4 +154,6 @@ record FeaturePage(String title, String summary, String highlights, String detai
                     "PerformanceOverlay displays timing and render information.\nUIFrameStats separates draw and layout work; UIInspector records\nnode bounds, clipping, focus, capture and selected style values.\n\nCompare equivalent scenes and viewport settings, and disable\nexpensive diagnostics when the investigation is complete.",
                     "long started = System.nanoTime();\n// Run the operation being measured\nlong micros = (System.nanoTime() - started) / 1_000;\nSystem.out.println(\"Operation: \" + micros + \" µs\");")
     };
+
+    static final FeaturePage[] PAGES = WikiFeatureCatalog.PAGES;
 }

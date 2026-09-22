@@ -7,6 +7,9 @@ final class FeatureExamples {
         return new Example(title, note, code);
     }
     static Example[] forPage(int page) {
+        return WikiFeatureCatalog.examples(page);
+    }
+    static Example[] legacyForPage(int page) {
         return switch(page) {
             case 0 -> new Example[]{
                 example("Reuse geometry", "Initialization. scene is your Scene3D.\nCreate geometry once and share it across instances.", "var mesh = ModelBuilder3D.box(1, 1, 1);\nfor (int i = 0; i < 8; i++) {\n    var instance = new ModelInstance3D()\n        .setModel(mesh)\n        .setMaterial(new Material3D())\n        .setPosition(i * 2, 0, 0);\n    scene.add(instance);\n}"),

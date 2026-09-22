@@ -36,9 +36,9 @@ public final class SnippetCompilationCheck {
         var compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) throw new IllegalStateException("A full JDK is required");
         List<JavaFileObject> sources = new ArrayList<>();
-        for (int page = 0; page < FeaturePage.PAGES.length; page++) {
-            add(sources, FeaturePage.PAGES[page].code());
-            var examples = FeatureExamples.forPage(page);
+        for (int page = 0; page < FeaturePage.LEGACY_PAGES.length; page++) {
+            add(sources, FeaturePage.LEGACY_PAGES[page].code());
+            var examples = FeatureExamples.legacyForPage(page);
             if (page < 8 && examples.length < 8) throw new AssertionError("Too few examples: " + page);
             for (var example : examples) {
                 if (example.title().isBlank() || example.note().isBlank())

@@ -174,7 +174,7 @@ public final class Main implements Application {
             var cards = cardsRow();
             for (int j = i; j < Math.min(i + columns, FeaturePage.PAGES.length); j++) {
                 var feature = FeaturePage.PAGES[j];
-                cards.add(card(j, feature.title(), feature.summary(), feature.highlights()));
+                cards.add(card(j, feature.artKind(), feature.title(), feature.summary(), feature.highlights()));
             }
             grid.add(cards);
         }
@@ -201,13 +201,13 @@ public final class Main implements Application {
         return row;
     }
 
-    private NanoContainer card(int kind, String title, String body, String highlights) {
-        Runnable open = () -> pendingPage = kind;
+    private NanoContainer card(int pageIndex, int artKind, String title, String body, String highlights) {
+        Runnable open = () -> pendingPage = pageIndex;
         var card = new NanoContainer();
         card.getLayout().column().gap(9).noShrink();
         if (width >= 700) card.getLayout().width(0).grow();
         else card.getLayout().widthPercent(100);
-        var art = new ShowcaseArt(kind, () -> time, open);
+        var art = new ShowcaseArt(artKind, () -> time, open);
         exhibit.addSurface(art);
         art.getLayout().widthPercent(100).height(width < 700 ? 190 : 170).noShrink();
         card.add(art);
