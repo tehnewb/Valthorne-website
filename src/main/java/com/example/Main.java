@@ -254,9 +254,10 @@ public final class Main implements Application {
             section.add(label(topics[i], width < 700 ? 26 : 32, WHITE));
             section.add(label(topics[i + 1], width < 700 ? 13 : 17, MUTED));
         }
-        var start = label("Start building", width < 700 ? 26 : 32, WHITE);
+        var start = label(feature.primaryExampleTitle(), width < 700 ? 26 : 32, WHITE);
         section.add(start);
-        exampleLinks.add(button("01  Start building", () -> navigate(start)));
+        exampleLinks.add(button("01  " + feature.primaryExampleTitle(), () -> navigate(start)));
+        section.add(label(feature.primaryExampleNote(), width < 700 ? 13 : 17, MUTED));
         section.add(new CodeBlock(feature.code()));
         int exampleNumber = 2;
         for (var example : examples) {

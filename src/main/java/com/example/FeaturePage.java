@@ -33,6 +33,14 @@ record FeaturePage(String title, String summary, String highlights, String detai
         return WikiFeatureCatalog.artKind(title);
     }
 
+    String primaryExampleTitle() {
+        return WikiFeatureCatalog.primaryExampleTitle(title);
+    }
+
+    String primaryExampleNote() {
+        return WikiFeatureCatalog.primaryExampleNote(title);
+    }
+
     String[] topics() {
         String[] generated = WikiFeatureCatalog.topics(title);
         if (generated.length > 0) return generated;
