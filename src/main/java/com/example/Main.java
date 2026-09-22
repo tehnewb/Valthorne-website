@@ -246,6 +246,9 @@ public final class Main implements Application {
             section.add(exampleLinks);
         }
         section.add(label(feature.details(), width < 700 ? 13 : 17, MUTED));
+        var wiki = new NanoHyperlink("Read the full Valthorne wiki guide  ↗", feature.wikiUrl());
+        wiki.getLayout().noShrink();
+        section.add(wiki);
         var topics = feature.topics();
         for (int i = 0; i < topics.length; i += 2) {
             section.add(label(topics[i], width < 700 ? 26 : 32, WHITE));
