@@ -107,7 +107,12 @@ function snippets(markdown) {
   }).filter(block => block.code.length > 0);
 
   const usage = blocks.filter(block => block.usage);
-  const chosen = (usage.length ? usage : blocks).slice(0, 12);
+  const chosen = usage.slice(0, 12);
+  for (const block of blocks) {
+    if (chosen.length >= 5) break;
+    if (!chosen.includes(block)) chosen.push(block);
+  }
+  if (!chosen.length) chosen.push(...blocks.slice(0, 12));
   const names = new Map();
   for (const block of chosen) {
     const count = (names.get(block.title) || 0) + 1;
@@ -172,9 +177,44 @@ const guides = fs.readdirSync(wikiDir).filter(name => included.test(name) && !ex
   return { title, slug, purpose, features: features.map(([name, description]) => [name, compact(description)]), code, highlights, art: artKind(slug) };
 });
 
+const relatedExamples = {
+  '02-Core-Audio-Overview': ['02-Core-Audio'],
+  '02-Core-Portable-Runtime': ['02-Core-Runtime', '02-Core-Assets'],
+  '04-Graphics-3D-Filament': ['04-Graphics-3D-Models', '05-Lighting-3D'],
+  '04-Graphics-3D-Particles-Guide': ['04-Graphics-3D-Particles-API', '03-Graphics-2D-Particles'],
+  '04-Graphics-3D-Path-Tracing': ['04-Graphics-Shaders', '04-Graphics-3D-Models'],
+  '04-Graphics-Capabilities': ['04-Graphics-3D-Filament', '01-Start-Platforms'],
+  '05-Lighting-Overview': ['05-Lighting-2D', '05-Lighting-3D'],
+  '05-Lighting-Studio': ['05-Lighting-3D', '04-Graphics-3D-Models'],
+  '07-UI-Advanced': ['07-UI-Controls', '07-UI-Data'],
+  '07-UI-Performance': ['07-UI-Data', '07-UI-Core'],
+  '07-UI-Rendering': ['07-UI-Core', '07-UI-NanoVG'],
+  '07-UI-System': ['07-UI-Behavior', '07-UI-Controls'],
+  '08-Data-Settings': ['08-Data-Buffers', '08-Data-Files'],
+  '09-Developer-Platform-Integration': ['04-Graphics-Capabilities', '04-Graphics-3D-Filament'],
+};
+const guideBySlug = new Map(guides.map(guide => [guide.slug, guide]));
+for (const guide of guides) {
+  for (const donorSlug of relatedExamples[guide.slug] || []) {
+    const donor = guideBySlug.get(donorSlug);
+    if (!donor) continue;
+    for (const example of donor.code) {
+      if (guide.code.length >= 5) break;
+      guide.code.push({
+        title: `${donor.title} — ${example.title}`,
+        note: `Related ${donor.title} example: ${example.note}`,
+        code: example.code,
+      });
+    }
+    if (guide.code.length >= 5) break;
+  }
+}
+
 const titleCounts = new Map();
 const missingExamples = guides.filter(guide => guide.code.length === 0);
 if (missingExamples.length) throw new Error(`Missing code examples for: ${missingExamples.map(guide => guide.slug).join(', ')}`);
+const shallowExamples = guides.filter(guide => guide.code.length < 5);
+if (shallowExamples.length) throw new Error(`Fewer than five examples: ${shallowExamples.map(guide => `${guide.slug} (${guide.code.length})`).join(', ')}`);
 for (const guide of guides) titleCounts.set(guide.title, (titleCounts.get(guide.title) || 0) + 1);
 for (const guide of guides) {
   if (titleCounts.get(guide.title) > 1) {
