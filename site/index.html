@@ -1,5 +1,74 @@
 <!doctype html>
-<html lang="en"><head><meta name="valthorne-physics" content="disabled"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Valthorne application</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101114;touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none}canvas{display:block;width:100%;height:100%;touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none}#error{display:none;position:fixed;inset:1rem;padding:1rem;color:#fff;background:#401f2a;font:14px system-ui}</style></head>
-<body><canvas id="scene" aria-label="Valthorne application"></canvas><div id="error" role="alert"></div><div id="status" hidden></div>
-<script src="vendor/filament.js"></script><script src="valthorne.js"></script><script type="module" src="host.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="valthorne-physics" content="disabled">
+  <meta name="description" content="Explore every Valthorne system through wiki-backed descriptions and Java examples.">
+  <title>Valthorne — Systems and examples</title>
+  <link rel="icon" type="image/png" href="images/github.png">
+  <link rel="stylesheet" href="website.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="social-links" aria-label="Valthorne community links">
+      <a href="https://github.com/tehnewb/Valthorne" aria-label="Valthorne on GitHub"><img src="images/github.png" alt=""></a>
+      <a href="https://discord.gg/APqcDzppDv" aria-label="Valthorne Discord"><img src="images/discord.png" alt=""></a>
+    </div>
+    <nav aria-label="Primary navigation">
+      <a href="#home">Home</a>
+      <a href="#features">Explore</a>
+    </nav>
+    <span class="built-with">BUILT WITH VALTHORNE</span>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div>
+        <p class="eyebrow">JAVA 25 · APACHE 2.0</p>
+        <h1><img class="hero-banner" src="images/valthorne-banner.png" alt="Valthorne"></h1>
+        <p class="hero-copy">An open-source Java game engine, documented system by system.</p>
+        <a class="primary-link" href="#features">Explore the engine <span aria-hidden="true">↓</span></a>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <iframe src="application.html?hero-preview" title="" tabindex="-1"></iframe>
+      </div>
+    </section>
+
+    <section class="catalog" id="features">
+      <div class="catalog-heading">
+        <div>
+          <p class="eyebrow">THE COMPLETE SYSTEM CATALOG</p>
+          <h2>Real features. Real Java.</h2>
+          <p>Choose a system to open its complete documentation view: every wiki-backed capability, description, and relevant Java example, with a navigation tree for moving through the page.</p>
+        </div>
+        <label class="filter-label" for="feature-filter">
+          Filter systems
+          <input id="feature-filter" type="search" placeholder="Audio, physics, UI…" autocomplete="off">
+        </label>
+      </div>
+      <div class="catalog-stats" id="catalog-stats" aria-live="polite"></div>
+      <div class="feature-grid" id="feature-grid"></div>
+      <p class="empty-state" id="empty-state" hidden>No Valthorne systems match that filter.</p>
+    </section>
+
+    <section class="documentation" id="documentation" hidden aria-live="polite">
+      <aside class="documentation-sidebar" aria-label="Documentation navigation">
+        <button class="back-button" id="back-to-features" type="button">← All features</button>
+        <div class="documentation-tree" id="documentation-tree"></div>
+      </aside>
+      <article class="documentation-content" id="documentation-content"></article>
+    </section>
+  </main>
+
+  <footer>
+    <h2>Build something extraordinary.</h2>
+    <p>Create a Java 25 project. Add Valthorne. Make it yours.</p>
+    <pre><code>implementation 'io.github.tehnewb:Valthorne:2.3.0'</code></pre>
+    <p class="footer-meta">© 2026 Valthorne · Albert Beaupre · Apache-2.0</p>
+  </footer>
+
+  <script src="wiki-catalog.js"></script>
+  <script src="website.js"></script>
+</body>
+</html>

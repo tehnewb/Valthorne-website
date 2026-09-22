@@ -3,6 +3,7 @@ import path from 'node:path';
 
 const wikiDir = path.resolve(process.argv[2] || '../Valthorne.wiki');
 const output = path.resolve('src/main/java/com/example/WikiFeatureCatalog.java');
+const webOutput = path.resolve('site/wiki-catalog.js');
 const included = /^(02|03|04|05|06|07|08)-.*\.md$|^09-Developer-(Diagnostics|Platform-Integration)\.md$/;
 const excluded = /04-Graphics-3D-Filament-Platforms|05-Lighting-Visual-Audit|06-Physics-Studio/;
 
@@ -34,6 +35,17 @@ function firstParagraph(markdown, heading) {
   return paragraphs[0] || '';
 }
 
+function pagePurpose(markdown, title) {
+  const explicit = firstParagraph(markdown, 'Purpose');
+  if (explicit) return explicit;
+  const beforeSections = markdown.split(/^## /m)[0];
+  const paragraphs = beforeSections.split(/\n\s*\n/)
+    .slice(1)
+    .map(clean)
+    .filter(text => text && !/^System manual(?: · Source)?$/i.test(text) && text !== title);
+  return paragraphs.find(text => text.length >= 40) || paragraphs[0] || title;
+}
+
 function tableFeatures(markdown) {
   const body = section(markdown, 'Features and when to use them');
   const rows = [];
@@ -46,7 +58,7 @@ function tableFeatures(markdown) {
 }
 
 function fallbackFeatures(markdown) {
-  const ignored = /^(Purpose|Getting started|Ownership and lifecycle|Important behavior|Components and examples|Related guides|Run|Try it|See it)/i;
+  const ignored = /^(Purpose|Getting started|Ownership and lifecycle|Important behavior|Components and examples|Related guides|Source|Run|Try it|See it)/i;
   const matches = [...markdown.matchAll(/^## (.+)$/gm)];
   const rows = [];
   for (let i = 0; i < matches.length && rows.length < 8; i++) {
@@ -55,7 +67,7 @@ function fallbackFeatures(markdown) {
     const from = matches[i].index + matches[i][0].length;
     const to = i + 1 < matches.length ? matches[i + 1].index : markdown.length;
     const text = markdown.slice(from, to).split(/\n\s*\n/)
-      .filter(value => !value.includes('```') && !value.trim().startsWith('|'))
+      .filter(value => !value.includes('```') && !value.trim().startsWith('|') && !value.trim().startsWith('#'))
       .map(value => compact(clean(value)))
       .find(Boolean);
     if (text) rows.push([title, text]);
@@ -123,19 +135,27 @@ function snippets(markdown) {
 }
 
 function artKind(slug) {
-  if (/Assets|Files|Buffers|Compression|Encryption|Settings/.test(slug)) return 8;
+  if (/Files/.test(slug)) return 21;
+  if (/Compression|Encryption/.test(slug)) return 20;
+  if (/Assets|Buffers/.test(slug)) return 8;
   if (/Input|Events/.test(slug)) return 9;
   if (/Shaders|Path-Tracing|Capabilities/.test(slug)) return 10;
   if (/Particles/.test(slug)) return 11;
-  if (/State-Machines|Timing|Scenes|Plugins|Runtime/.test(slug)) return 12;
+  if (/Plugins/.test(slug)) return 19;
+  if (/State-Machines|Timing|Scenes|Runtime/.test(slug)) return 12;
+  if (/Math/.test(slug)) return 23;
   if (/^08-/.test(slug)) return 13;
   if (/Portable|Platform/.test(slug)) return 14;
   if (/Diagnostics/.test(slug)) return 15;
   if (/Audio/.test(slug)) return 4;
   if (/Physics/.test(slug)) return 5;
-  if (/Animation|Textures|Tiled|Fonts/.test(slug)) return 6;
+  if (/Fonts/.test(slug)) return 16;
+  if (/Textures/.test(slug)) return 17;
+  if (/Tiled|LDtk/.test(slug)) return 18;
+  if (/Animation/.test(slug)) return 6;
   if (/Cameras|Viewports/.test(slug)) return 7;
   if (/Lighting/.test(slug)) return 1;
+  if (/Themes/.test(slug)) return 22;
   if (/UI-/.test(slug)) return 3;
   if (/3D|Models|Filament/.test(slug)) return 0;
   return 2;
@@ -159,11 +179,15 @@ const fallbackExamples = {
   },
 };
 
+const purposeOverrides = {
+  '02-Core-Audio-Overview': 'Valthorne audio supports buffered and streaming playback, managed players, and circle, rectangle, sphere, and box areas that attenuate gain from a logical listener. The system avoids inactive work, reuses decoder and upload storage, and keeps playback on its owned audio thread.',
+};
+
 const guides = fs.readdirSync(wikiDir).filter(name => included.test(name) && !excluded.test(name)).sort().map(file => {
   const markdown = fs.readFileSync(path.join(wikiDir, file), 'utf8');
   const title = clean((markdown.match(/^# (.+)$/m) || [null, file.replace(/\.md$/, '')])[1]);
   const slug = file.replace(/\.md$/, '');
-  const purpose = compact(firstParagraph(markdown, 'Purpose') || clean(markdown.split(/\n\s*\n/).slice(1).find(p => clean(p)) || title));
+  const purpose = compact(purposeOverrides[slug] || pagePurpose(markdown, title));
   let features = tableFeatures(markdown);
   if (!features.length) features = fallbackFeatures(markdown);
   if (!features.length) features = [['Overview', purpose]];
@@ -261,6 +285,17 @@ guides.forEach(guide => lines.push(`            case ${java(guide.title)} -> ${g
 lines.push('            default -> 2;', '        };', '    }', '', '    private WikiFeatureCatalog() {}', '}', '');
 
 fs.writeFileSync(output, lines.join('\n'));
+const webGuides = guides.map((guide, index) => ({
+  index,
+  title: guide.title,
+  slug: guide.slug,
+  summary: guide.purpose,
+  capabilities: guide.features.map(([title, description]) => ({ title, description })),
+  examples: guide.code.map(example => ({ title: example.title, note: example.note, code: example.code })),
+  art: guide.art,
+  wikiUrl: `https://github.com/tehnewb/Valthorne/wiki/${guide.slug}`,
+}));
+fs.writeFileSync(webOutput, `window.VALTHORNE_FEATURES = ${JSON.stringify(webGuides)};\n`);
 const featureCount = guides.reduce((sum, guide) => sum + guide.features.length, 0);
 const snippetCount = guides.reduce((sum, guide) => sum + guide.code.length, 0);
-console.log(`Generated ${guides.length} wiki-backed system pages, ${featureCount} documented capabilities and ${snippetCount} code snippets at ${output}`);
+console.log(`Generated ${guides.length} wiki-backed system pages, ${featureCount} documented capabilities and ${snippetCount} code snippets at ${output} and ${webOutput}`);

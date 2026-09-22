@@ -155,7 +155,10 @@ public final class Main implements Application {
         else row.getLayout().row().itemsCenter();
         var copy = new NanoContainer();
         copy.getLayout().column().gap(14).noShrink().widthPercent(width < 700 ? 100 : 47);
-        copy.add(label("valthorne", width < 700 ? 64 : Math.min(104, width * .075f), WHITE));
+        var banner = new BannerImage();
+        float bannerWidth = width < 700 ? width - gutter * 2 : width * .47f;
+        banner.getLayout().widthPercent(100).height(Math.max(150, Math.min(300, bannerWidth / 2.466f))).noShrink();
+        copy.add(banner);
         copy.add(label("an open source Java game engine", width < 700 ? 14 : 17, MUTED));
         row.add(copy);
         exhibitSlot = new NanoContainer();
@@ -169,12 +172,12 @@ public final class Main implements Application {
         var grid = section(INK, gutter, 32);
         grid.getLayout().gap(32);
         projects = grid;
-        int columns = width >= 1050 ? 3 : width >= 700 ? 2 : 1;
+        int columns = 1;
         for (int i = 0; i < FeaturePage.PAGES.length; i += columns) {
             var cards = cardsRow();
             for (int j = i; j < Math.min(i + columns, FeaturePage.PAGES.length); j++) {
                 var feature = FeaturePage.PAGES[j];
-                cards.add(card(j, feature.artKind(), feature.title(), feature.summary(), feature.highlights()));
+                cards.add(card(j, feature));
             }
             grid.add(cards);
         }
@@ -201,21 +204,53 @@ public final class Main implements Application {
         return row;
     }
 
-    private NanoContainer card(int pageIndex, int artKind, String title, String body, String highlights) {
+    private NanoContainer card(int pageIndex, FeaturePage feature) {
         Runnable open = () -> pendingPage = pageIndex;
-        var card = new NanoContainer();
-        card.getLayout().column().gap(9).noShrink();
-        if (width >= 700) card.getLayout().width(0).grow();
-        else card.getLayout().widthPercent(100);
-        var art = new ShowcaseArt(artKind, () -> time, open);
+        var card = panel(PANEL);
+        card.cornerRadius(18).borderWidth(1).borderColor(LINE);
+        card.getLayout().widthPercent(100).column().gap(16).padding(width < 700 ? 16 : 22).noShrink();
+        var art = new ShowcaseArt(feature.artKind(), pageIndex, feature.title(), () -> time, open);
         exhibit.addSurface(art);
-        art.getLayout().widthPercent(100).height(width < 700 ? 190 : 170).noShrink();
+        art.getLayout().widthPercent(100).height(width < 700 ? 170 : 210).noShrink();
         card.add(art);
-        card.add(label(title, width < 700 ? 27 : 24, WHITE));
-        card.add(label(body, width < 700 ? 12 : 13, MUTED));
-        card.add(label(highlights, 10, VIOLET));
-        card.add(button("Explore features  →", open));
+        card.add(wrappedLabel(feature.title(), width < 700 ? 28 : 34, WHITE, width < 700 ? 27 : 52, 3));
+        card.add(wrappedLabel(feature.summary(), width < 700 ? 13 : 15, MUTED, width < 700 ? 48 : 96, 5));
+        int capabilityCount = feature.topics().length / 2;
+        var examples = FeatureExamples.forPage(pageIndex);
+        int exampleCount = examples.length + 1;
+        card.add(label(capabilityCount + " DOCUMENTED CAPABILITIES  /  " + exampleCount + " REAL CODE EXAMPLES", 11, VIOLET));
+
+        var previewGrid = new NanoContainer();
+        previewGrid.getLayout().widthPercent(100).column().gap(12).noShrink();
+        for (int i = 0; i < 5; i += width >= 900 ? 2 : 1) {
+            var previewRow = cardsRow();
+            int rowCount = width >= 900 ? 2 : 1;
+            for (int j = i; j < Math.min(5, i + rowCount); j++) {
+                previewRow.add(compactExample(feature, examples, j));
+            }
+            previewGrid.add(previewRow);
+        }
+        card.add(previewGrid);
+        card.add(wrappedLabel(feature.highlights(), 10, VIOLET, width < 700 ? 42 : 110, 3));
+        card.add(button("Open all capabilities and " + exampleCount + " examples  →", open));
         return card;
+    }
+
+    private NanoPanel compactExample(FeaturePage feature, FeatureExamples.Example[] examples, int index) {
+        String title = index == 0 ? feature.primaryExampleTitle() : examples[index - 1].title();
+        String note = index == 0 ? feature.primaryExampleNote() : examples[index - 1].note();
+        String code = index == 0 ? feature.code() : examples[index - 1].code();
+        var preview = panel(new Color(0xFF0A0A0C));
+        preview.cornerRadius(12).borderWidth(1).borderColor(LINE);
+        preview.getLayout().column().gap(8).padding(14).noShrink();
+        if (width >= 900) preview.getLayout().width(0).grow();
+        else preview.getLayout().widthPercent(100);
+        preview.add(wrappedLabel(String.format("%02d  %s", index + 1, title), 14, WHITE, width < 900 ? 48 : 54, 2));
+        preview.add(wrappedLabel(note, 11, MUTED, width < 900 ? 54 : 66, 3));
+        var source = wrappedLabel(compactCode(code, width < 900 ? 50 : 62, 4), 11, VIOLET, width < 900 ? 50 : 62, 4);
+        source.fontName("code");
+        preview.add(source);
+        return preview;
     }
 
     private void buildFeature(NanoContainer content, float gutter) {
@@ -227,8 +262,8 @@ public final class Main implements Application {
         about = section;
         section.add(button("← All features", () -> pendingPage = -1));
         section.add(label("FEATURES  /  " + String.format("%02d", page + 1), 11, VIOLET));
-        section.add(label(feature.title(), width < 700 ? 42 : 64, WHITE));
-        section.add(label(feature.summary(), width < 700 ? 16 : 21, MUTED));
+        section.add(wrappedLabel(feature.title(), width < 700 ? 42 : 64, WHITE, width < 700 ? 26 : 54, 4));
+        section.add(wrappedLabel(feature.summary(), width < 700 ? 16 : 21, MUTED, width < 700 ? 46 : 76, 8));
         var examples = FeatureExamples.forPage(page);
         var exampleLinks = new NanoContainer();
         exampleLinks.getLayout().column().gap(6).noShrink();
@@ -236,7 +271,7 @@ public final class Main implements Application {
             documentationNavigation.add(label("DOCUMENTATION", 12, VIOLET));
             for (int i = 0; i < FeaturePage.PAGES.length; i++) {
                 final int target = i;
-                var link = button(FeaturePage.PAGES[i].title(), () -> pendingPage = target);
+                var link = button(shortText(FeaturePage.PAGES[i].title(), 31), () -> pendingPage = target);
                 if (i == page) link.textColor(VIOLET);
                 documentationNavigation.add(link);
                 if (i == page) documentationNavigation.add(exampleLinks);
@@ -245,26 +280,26 @@ public final class Main implements Application {
             section.add(label((examples.length + 1) + " code example" + (examples.length == 0 ? "" : "s") + "  /  On this page", 13, VIOLET));
             section.add(exampleLinks);
         }
-        section.add(label(feature.details(), width < 700 ? 13 : 17, MUTED));
+        section.add(wrappedLabel(feature.details(), width < 700 ? 13 : 17, MUTED, width < 700 ? 48 : 82, 12));
         var wiki = new NanoHyperlink("Read the full Valthorne wiki guide  ↗", feature.wikiUrl());
         wiki.getLayout().noShrink();
         section.add(wiki);
         var topics = feature.topics();
         for (int i = 0; i < topics.length; i += 2) {
-            section.add(label(topics[i], width < 700 ? 26 : 32, WHITE));
-            section.add(label(topics[i + 1], width < 700 ? 13 : 17, MUTED));
+            section.add(wrappedLabel(topics[i], width < 700 ? 26 : 32, WHITE, width < 700 ? 30 : 58, 4));
+            section.add(wrappedLabel(topics[i + 1], width < 700 ? 13 : 17, MUTED, width < 700 ? 48 : 82, 12));
         }
         var start = label(feature.primaryExampleTitle(), width < 700 ? 26 : 32, WHITE);
         section.add(start);
         exampleLinks.add(button("01  " + feature.primaryExampleTitle(), () -> navigate(start)));
-        section.add(label(feature.primaryExampleNote(), width < 700 ? 13 : 17, MUTED));
+        section.add(wrappedLabel(feature.primaryExampleNote(), width < 700 ? 13 : 17, MUTED, width < 700 ? 48 : 82, 12));
         section.add(new CodeBlock(feature.code()));
         int exampleNumber = 2;
         for (var example : examples) {
             var heading = label(example.title(), width < 700 ? 26 : 32, WHITE);
             section.add(heading);
             exampleLinks.add(button("0" + exampleNumber++ + "  " + example.title(), () -> navigate(heading)));
-            section.add(label(example.note(), width < 700 ? 13 : 17, MUTED));
+            section.add(wrappedLabel(example.note(), width < 700 ? 13 : 17, MUTED, width < 700 ? 48 : 82, 12));
             section.add(new CodeBlock(example.code()));
         }
         section.add(label("Use these fragments in your Application lifecycle.\nImport the relevant Valthorne classes in your project.", width < 700 ? 12 : 14, MUTED));
@@ -283,6 +318,56 @@ public final class Main implements Application {
         label.fontName(size >= 24 ? "editorial" : "default").fontSize(size).color(color).selectable(true);
         label.getLayout().noShrink();
         return label;
+    }
+
+    private NanoLabel wrappedLabel(String text, float size, Color color, int lineLength, int maxLines) {
+        var result = label(wrapText(text, lineLength, maxLines), size, color);
+        result.getLayout().widthPercent(100).noShrink();
+        return result;
+    }
+
+    private static String wrapText(String text, int lineLength, int maxLines) {
+        String normalized = text == null ? "" : text.replace('\n', ' ').replaceAll("\\s+", " ").trim();
+        if (normalized.isEmpty()) return normalized;
+        var out = new StringBuilder();
+        int line = 0, column = 0;
+        for (String word : normalized.split(" ")) {
+            if (column > 0 && column + 1 + word.length() > lineLength) {
+                if (++line >= maxLines) {
+                    if (out.length() > 0 && out.charAt(out.length() - 1) == ' ') out.setLength(out.length() - 1);
+                    return out.append('…').toString();
+                }
+                out.append('\n');
+                column = 0;
+            }
+            if (column > 0) {
+                out.append(' ');
+                column++;
+            }
+            if (word.length() > lineLength) word = word.substring(0, Math.max(1, lineLength - 1)) + "…";
+            out.append(word);
+            column += word.length();
+        }
+        return out.toString();
+    }
+
+    private static String compactCode(String code, int lineLength, int maxLines) {
+        var out = new StringBuilder();
+        int lines = 0;
+        for (String raw : code.split("\\R")) {
+            String value = raw.stripTrailing();
+            if (value.isBlank()) continue;
+            if (value.length() > lineLength) value = value.substring(0, Math.max(1, lineLength - 1)) + "…";
+            if (lines++ > 0) out.append('\n');
+            out.append(value);
+            if (lines >= maxLines) break;
+        }
+        if (code.lines().filter(line -> !line.isBlank()).count() > maxLines) out.append("\n…");
+        return out.toString();
+    }
+
+    private static String shortText(String text, int max) {
+        return text.length() <= max ? text : text.substring(0, Math.max(1, max - 1)) + "…";
     }
 
     private static NanoPanel panel(Color c) {return new NanoPanel().backgroundColor(c).hoverBackgroundColor(c).focusedBackgroundColor(c).pressedBackgroundColor(c).borderWidth(0).cornerRadius(0);}
