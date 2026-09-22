@@ -80,7 +80,7 @@ final class FeatureExamples {
                 example("Use a fill viewport", "Initialization. Fill preserves aspect ratio while covering\nthe display, which can crop the outer world edges.", "var gameplay = new FillViewport(1280, 720);\ngameplay.update(Window.getWidth(), Window.getHeight());\ngameplay.apply();"),
                 example("Use a fit viewport for UI", "Initialization. Fit keeps the complete logical canvas\nvisible and is useful when cropping would hide controls.", "var interfaceView = new FitViewport(1920, 1080);\ninterfaceView.update(Window.getWidth(), Window.getHeight());\ninterfaceView.apply();"),
                 example("Inspect logical dimensions", "Resize or diagnostics. Read the effective world size\nafter updating the viewport for the current display.", "viewport.update(Window.getWidth(), Window.getHeight());\nfloat worldWidth = viewport.getWorldWidth();\nfloat worldHeight = viewport.getWorldHeight();\nSystem.out.println(worldWidth + \" x \" + worldHeight);")};
-            default -> throw new IllegalArgumentException("Unknown feature page: " + page);
+            default -> new Example[0];
         };
     }
 }

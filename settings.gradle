@@ -1,3 +1,3 @@
 pluginManagement { repositories { gradlePluginPortal(); mavenCentral() } }
 rootProject.name = 'ValthorneStarter'
-includeBuild('../Valthorne')
+includeBuild(providers.gradleProperty('valthorneDir').orElse('../Valthorne').get())

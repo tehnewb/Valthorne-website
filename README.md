@@ -26,20 +26,19 @@ publish or modify the live GitHub Pages website.
 
 - Navigation buttons smoothly scroll to the engine overview and quick start.
 - One full-window scene lights the tree, page backdrop and card surfaces. Move the pointer anywhere on the page to move its light. Text remains a selectable, readable UI overlay.
-- Pause motion stops decorative animation; navigation then jumps immediately.
 - Text is selectable, including multiline text, word/line selection by repeated
   clicks, Shift extension and Ctrl/Cmd+A/C shortcuts.
 - Narrow layouts stack content and the live 3D exhibit vertically.
-- Card previews and their feature links open eight distinct in-application documentation pages covering 3D rendering, lighting, the application lifecycle, UI, audio, physics, animation and viewports. Each includes practical explanations and a code snippet. Home/All features returns to the landing page. These Java views do not change the browser URL.
+- Compact card previews open sixteen in-application feature pages spanning the wiki's major engine systems: runtime, 2D and 3D graphics, lighting, physics, UI, audio, assets, input, rendering, effects, state, data, platforms and diagnostics. Home/All features returns to the landing page. These Java views do not change the browser URL.
 - Cards lift and tilt on hover. Their materials no longer cast the large shadow bands across the page.
 - Code blocks use JetBrains Mono with syntax highlighting and horizontal scrolling. Copy code exports the original snippet, including whitespace; selection is also supported.
-- Each feature page contains nine code examples (72 total), progressing from setup through runtime control, diagnostics, cleanup and production-minded patterns. Every example includes prerequisite notes and a jump link. Fragments assume the named resources already exist; they are not standalone game files unless shown as a complete class.
+- The eight original deep-dive pages retain nine code examples each; the eight new overview pages add a focused starting example, for 80 displayed snippets total. Fragments assume the named resources already exist unless the surrounding note says otherwise.
 - Desktop documentation uses an independently scrolling left sidebar, with the current chapter's example links expanded. Narrow screens use an inline example list.
 - This document-only export passes `-PwebPhysics=false`: the snippets describe physics APIs but do not execute a physics simulation. Game exports retain physics by default. Scene rendering uses PERFORMANCE quality (no MSAA, half-resolution ambient occlusion).
 
 ## Code example checks
 
-Run `gradlew.bat checkSnippets` to compile all 40 displayed snippets against the
+Run `gradlew.bat checkSnippets` to compile all 80 displayed snippets against the
 engine API. This check also runs with `check`. It supplies the documented context
 and imports without launching graphics, audio or physics; it validates types and
 API usage, not the runtime behavior of a complete game.

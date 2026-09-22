@@ -29,7 +29,10 @@ def lwjglJvmArgs = [
 ]
 
 tasks.withType(JavaExec).configureEach { jvmArgs += lwjglJvmArgs }
-tasks.withType(Test).configureEach { jvmArgs += lwjglJvmArgs }
+tasks.withType(Test).configureEach {
+    jvmArgs += lwjglJvmArgs
+    failOnNoDiscoveredTests = false
+}
 
 tasks.register('checkSnippets', JavaExec) {
     group = 'verification'
@@ -52,9 +55,9 @@ tasks.named('distTar') { dependsOn tasks.named('shadowJar') }
 tasks.named('distZip') { dependsOn tasks.named('shadowJar') }
 tasks.matching { it.name == 'startShadowScripts' }.configureEach { dependsOn tasks.named('jar') }
 
-def engineProjectDir = file('../Valthorne')
-def portableProjectDir = file('../Valthorne/portable')
-def engineGradle = file('../Valthorne/gradlew.bat')
+def engineProjectDir = file(providers.gradleProperty('valthorneDir').orElse('../Valthorne').get())
+def portableProjectDir = new File(engineProjectDir, 'portable')
+def engineGradle = new File(engineProjectDir, 'gradlew.bat')
 
 tasks.register('webExportEngine', Exec) {
     group = 'build'

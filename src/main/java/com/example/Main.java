@@ -93,7 +93,11 @@ public final class Main implements Application {
         ribbon.getLayout().widthPercent(100).height(92).row().itemsCenter().padding(gutter, 18).noShrink();
         var left = new NanoContainer();
         left.getLayout().width(0).grow();
-        if (width >= 800) left.add(label("Open source  /  Java 25", 12, MUTED));
+        if (width >= 800) {
+            left.getLayout().row().itemsCenter().gap(5);
+            left.add(new SocialIconLink(SocialIconLink.GITHUB, "https://github.com/tehnewb/Valthorne"));
+            left.add(new SocialIconLink(SocialIconLink.DISCORD, "https://discord.gg/APqcDzppDv"));
+        }
         ribbon.add(left);
         var nav = panel(PANEL);
         nav.cornerRadius(30).borderWidth(1).borderColor(LINE);
@@ -106,21 +110,6 @@ public final class Main implements Application {
             if (page >= 0) pendingPage = -1;
             else navigate(projects);
         }));
-        var github = new NanoHyperlink("GitHub", "https://github.com/tehnewb/Valthorne");
-        github.setStyle(NanoHyperlink.FONT_SIZE_KEY, 12f);
-        github.setStyle(NanoHyperlink.PADDING_X_KEY, 17f);
-        github.setStyle(NanoHyperlink.COLOR_KEY, MUTED);
-        github.setStyle(NanoHyperlink.VISITED_COLOR_KEY, MUTED);
-        github.setStyle(NanoHyperlink.HOVER_COLOR_KEY, WHITE);
-        github.setStyle(NanoHyperlink.FOCUSED_COLOR_KEY, WHITE);
-        github.getLayout().height(34).noShrink();
-        nav.add(github);
-        var pause = button(motion ? "Ⅱ" : "▷", () -> {});
-        pause.action(n -> {
-            motion = !motion;
-            pause.text(motion ? "Ⅱ" : "▷");
-        });
-        nav.add(pause);
         ribbon.add(nav);
         var right = new NanoContainer();
         right.getLayout().width(0).grow().itemsEnd();
@@ -180,11 +169,12 @@ public final class Main implements Application {
         var grid = section(INK, gutter, 32);
         grid.getLayout().gap(32);
         projects = grid;
-        for (int i = 0; i < FeaturePage.PAGES.length; i += 2) {
+        int columns = width >= 1050 ? 3 : width >= 700 ? 2 : 1;
+        for (int i = 0; i < FeaturePage.PAGES.length; i += columns) {
             var cards = cardsRow();
-            for (int j = i; j < Math.min(i + 2, FeaturePage.PAGES.length); j++) {
+            for (int j = i; j < Math.min(i + columns, FeaturePage.PAGES.length); j++) {
                 var feature = FeaturePage.PAGES[j];
-                cards.add(card(j, feature.title(), feature.summary()));
+                cards.add(card(j, feature.title(), feature.summary(), feature.highlights()));
             }
             grid.add(cards);
         }
@@ -211,7 +201,7 @@ public final class Main implements Application {
         return row;
     }
 
-    private NanoContainer card(int kind, String title, String body) {
+    private NanoContainer card(int kind, String title, String body, String highlights) {
         Runnable open = () -> pendingPage = kind;
         var card = new NanoContainer();
         card.getLayout().column().gap(9).noShrink();
@@ -219,10 +209,11 @@ public final class Main implements Application {
         else card.getLayout().widthPercent(100);
         var art = new ShowcaseArt(kind, () -> time, open);
         exhibit.addSurface(art);
-        art.getLayout().widthPercent(100).height(width < 700 ? 230 : Math.min(340, width * .24f)).noShrink();
+        art.getLayout().widthPercent(100).height(width < 700 ? 190 : 170).noShrink();
         card.add(art);
-        card.add(label(title, 30, WHITE));
+        card.add(label(title, width < 700 ? 27 : 24, WHITE));
         card.add(label(body, width < 700 ? 12 : 13, MUTED));
+        card.add(label(highlights, 10, VIOLET));
         card.add(button("Explore features  →", open));
         return card;
     }
@@ -235,9 +226,10 @@ public final class Main implements Application {
         projects = section;
         about = section;
         section.add(button("← All features", () -> pendingPage = -1));
-        section.add(label("FEATURES  /  0" + (page + 1), 11, VIOLET));
+        section.add(label("FEATURES  /  " + String.format("%02d", page + 1), 11, VIOLET));
         section.add(label(feature.title(), width < 700 ? 42 : 64, WHITE));
         section.add(label(feature.summary(), width < 700 ? 16 : 21, MUTED));
+        var examples = FeatureExamples.forPage(page);
         var exampleLinks = new NanoContainer();
         exampleLinks.getLayout().column().gap(6).noShrink();
         if (documentationNavigation != null) {
@@ -250,7 +242,7 @@ public final class Main implements Application {
                 if (i == page) documentationNavigation.add(exampleLinks);
             }
         } else {
-            section.add(label("5 code examples  /  On this page", 13, VIOLET));
+            section.add(label((examples.length + 1) + " code example" + (examples.length == 0 ? "" : "s") + "  /  On this page", 13, VIOLET));
             section.add(exampleLinks);
         }
         section.add(label(feature.details(), width < 700 ? 13 : 17, MUTED));
@@ -264,7 +256,7 @@ public final class Main implements Application {
         exampleLinks.add(button("01  Start building", () -> navigate(start)));
         section.add(new CodeBlock(feature.code()));
         int exampleNumber = 2;
-        for (var example : FeatureExamples.forPage(page)) {
+        for (var example : examples) {
             var heading = label(example.title(), width < 700 ? 26 : 32, WHITE);
             section.add(heading);
             exampleLinks.add(button("0" + exampleNumber++ + "  " + example.title(), () -> navigate(heading)));

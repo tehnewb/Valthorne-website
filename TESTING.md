@@ -23,9 +23,9 @@ Verification:
 GitHub Pages was not updated; changes are intentionally local for review.
 # Expanded code examples
 
-- Eight feature pages now each contain five examples (40 total).
+- Sixteen feature pages now expose 80 snippets in total. The eight original deep dives retain their extended example sets, while each new compact overview includes a focused starting example.
 - `gradlew.bat checkSnippets` compiles the exact displayed snippets with supplied
-  imports and documented application context; all 40 passed. This is a compile
+  imports and documented application context; all 80 passed. This is a compile
   check, not a graphics/audio/physics runtime test.
 - Web export and the exported-resource check passed after the expansion.
 - Browser inspection confirmed multiple separately highlighted blocks and their
